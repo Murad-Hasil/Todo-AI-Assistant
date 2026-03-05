@@ -1,0 +1,16 @@
+# [Task]: T-4.6 — ConfigMap documenting the expected NEXT_PUBLIC_API_URL
+# NOTE: NEXT_PUBLIC_API_URL is BAKED into the Next.js image at build time.
+# This ConfigMap serves as documentation of the expected value and may be
+# used for server-side (non-NEXT_PUBLIC) runtime variables in future phases.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todoai-frontend-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: todoai-frontend
+    app.kubernetes.io/part-of: todoai
+data:
+  # Informational only — real value is baked into the image at docker build time
+  # via --build-arg NEXT_PUBLIC_API_URL=http://$(minikube ip):30800
+  NEXT_PUBLIC_API_URL: "http://MINIKUBE_IP:30800"

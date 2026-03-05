@@ -1,0 +1,22 @@
+# [Task]: T-4.13
+# Patterns to ignore when packaging the Helm chart (helm package)
+# This prevents secrets from being bundled into chart archives.
+
+# Secret values files — NEVER package these
+secrets.values.yaml
+*.secret.yaml
+*.example
+
+# Windows WSL2 Alternate Data Stream artifacts
+*:Zone.Identifier
+Zone.Identifier
+
+# Version control
+.git/
+.gitignore
+
+# Editor and OS artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp

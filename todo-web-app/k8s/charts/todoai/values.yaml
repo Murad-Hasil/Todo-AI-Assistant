@@ -1,0 +1,46 @@
+# [Task]: T-4.4
+# Default values for todoai Helm chart.
+# Override with: helm install todoai ./charts/todoai --values secrets.values.yaml
+
+namespace: default
+
+backend:
+  image:
+    repository: todo-backend
+    tag: local
+    pullPolicy: Never
+  replicaCount: 1
+  port: 8000
+  nodePort: 30800
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "250m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+  # Secret values — override in secrets.values.yaml (never commit real values)
+  secret:
+    DATABASE_URL: ""
+    BETTER_AUTH_SECRET: ""
+    GROQ_API_KEY: ""
+    CORS_ORIGINS: "http://localhost:3000"
+
+frontend:
+  image:
+    repository: todo-frontend
+    tag: local
+    pullPolicy: Never
+  replicaCount: 1
+  port: 3000
+  nodePort: 30300
+  resources:
+    requests:
+      memory: "192Mi"
+      cpu: "250m"
+    limits:
+      memory: "384Mi"
+      cpu: "500m"
+  # Better Auth — override in secrets.values.yaml with the Minikube IP NodePort URL
+  # Example: http://192.168.49.2:30300
+  betterAuthUrl: ""

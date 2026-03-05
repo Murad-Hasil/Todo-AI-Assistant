@@ -1,0 +1,7 @@
+# [Task]: T-4.4
+apiVersion: v2
+name: todoai
+description: TodoAI full-stack local Kubernetes deployment (Phase 4)
+type: application
+version: 0.1.0
+appVersion: "2.2.0"

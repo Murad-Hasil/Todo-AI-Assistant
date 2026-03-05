@@ -1,0 +1,90 @@
+openapi: "3.0.3"
+info:
+  title: Health Check
+  description: >
+    Backend liveness and readiness probe endpoint.
+    This endpoint is polled by both the Kubernetes livenessProbe (every 20s)
+    and readinessProbe (every 10s) defined in the backend Deployment manifest.
+    It must return HTTP 200 for the pod to receive traffic.
+  version: "1.0"
+  contact:
+    name: TodoAI Backend
+    url: "https://github.com/brownie/hackathon-II"
+servers:
+  - url: "http://todoai-backend-svc:8000"
+    description: In-cluster ClusterIP DNS (used by Kubernetes probes and frontend SSR)
+  - url: "http://{minikube_ip}:30800"
+    description: NodePort access from developer host
+    variables:
+      minikube_ip:
+        default: "192.168.49.2"
+        description: Output of `minikube ip` on the developer's machine
+paths:
+  /health:
+    get:
+      operationId: health_check
+      summary: Liveness and readiness probe
+      description: >
+        Returns the current health status of the backend application.
+        A 200 response indicates the application is running and able to handle
+        requests. The Kubernetes livenessProbe uses this to decide whether to
+        restart the pod; the readinessProbe uses it to gate traffic routing.
+        No authentication is required for this endpoint.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Application is healthy and ready to serve requests
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    description: Health status string; always "ok" when the endpoint returns 200
+                    example: ok
+                    enum:
+                      - ok
+                  version:
+                    type: string
+                    description: >
+                      Application version from pyproject.toml (optional field).
+                      May be omitted if version introspection is not implemented.
+                    example: "2.2.0"
+              examples:
+                healthy:
+                  summary: Healthy response
+                  value:
+                    status: ok
+                    version: "2.2.0"
+                minimal:
+                  summary: Minimal healthy response (version omitted)
+                  value:
+                    status: ok
+        "503":
+          description: >
+            Application is not ready to serve requests (startup in progress,
+            database unreachable, or dependency initialization failed).
+            Kubernetes readinessProbe treats this as NotReady and stops routing
+            traffic to the pod until subsequent probes return 200.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  detail:
+                    type: string
+                    description: Human-readable description of the failure
+                    example: "Database connection unavailable"
+              examples:
+                db_unavailable:
+                  summary: Database unreachable
+                  value:
+                    status: error
+                    detail: "Database connection unavailable"

@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "${NEON_DATABASE_URL}"
+      ]
+    },
+    "todo-mcp-server": {
+      "command": "uv",
+      "args": ["run", "mcp", "run", "app/mcp/server.py"],
+      "cwd": "/home/brownie/projects/hackathon-II/todo-web-app/backend"
+    }
+  }
+}

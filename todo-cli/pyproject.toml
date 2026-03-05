@@ -1,0 +1,17 @@
+[project]
+name = "todo-cli"
+version = "0.1.0"
+description = "Phase 1 — In-Memory Python Console Todo App"
+requires-python = ">=3.13"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

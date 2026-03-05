@@ -1,0 +1,83 @@
+openapi: "3.1.0"
+info:
+  title: Auth Middleware Contract — Phase 2.2
+  description: >
+    Describes the authentication contract applied to all /api/* endpoints.
+    This is not a new endpoint; it is a cross-cutting security layer that
+    wraps every existing task CRUD endpoint.
+  version: "2.2.0"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        HS256 JWT issued by Better Auth on the frontend.
+        Must contain `sub` (user ID) and `exp` (expiration) claims.
+
+  schemas:
+    AuthError:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          enum:
+            - "Not authenticated"
+            - "Invalid token"
+            - "Token expired"
+          description: Human-readable error. Internal reason is logged, not returned.
+
+  responses:
+    Unauthorized:
+      description: Missing, malformed, expired, or invalid JWT.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthError"
+          examples:
+            missing_header:
+              value: { "detail": "Not authenticated" }
+            invalid_token:
+              value: { "detail": "Invalid token" }
+            expired_token:
+              value: { "detail": "Token expired" }
+
+security:
+  # Applied globally to all paths except /health
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check (unauthenticated)
+      security: []  # Override: no auth required
+      responses:
+        "200":
+          description: Service is alive
+
+  # All /api/* endpoints inherit global BearerAuth security requirement.
+  # Responses for 401 are added to each endpoint by the auth middleware.
+  # Endpoint definitions live in the Phase 2.1 contracts/tasks-api.yaml.
+
+x-auth-middleware-behaviour:
+  extraction:
+    header: "Authorization"
+    format: "Bearer <token>"
+    failure: 401 "Not authenticated"
+  verification:
+    algorithm: HS256
+    secret_env: BETTER_AUTH_SECRET
+    required_claims: [exp, sub]
+    exp_failure: 401 "Token expired"
+    decode_failure: 401 "Invalid token"
+  propagation:
+    user_id_source: jwt.sub
+    injection: "FastAPI Depends(get_current_user_id) → str"
+  audit_log:
+    on: failure
+    fields: [timestamp, event, reason, endpoint, source_ip]
+    level: WARNING
+    logger: auth.audit

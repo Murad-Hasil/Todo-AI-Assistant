@@ -1,0 +1,270 @@
+{
+  "mcp_server": {
+    "name": "todo-mcp-server",
+    "version": "1.0.0",
+    "description": "MCP server exposing Todo CRUD operations as agent tools",
+    "sdk": "mcp (Official MCP SDK for Python)",
+    "implementation": "FastMCP"
+  },
+  "tools": [
+    {
+      "name": "add_task",
+      "description": "Creates a new task for the authenticated user.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "Authenticated user ID (string, from JWT sub claim)"
+          },
+          "title": {
+            "type": "string",
+            "description": "Task title. Must be 1–200 characters.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional task description. Max 1000 characters.",
+            "maxLength": 1000
+          }
+        },
+        "required": ["user_id", "title"]
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [true] },
+              "task": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "format": "uuid" },
+                  "title": { "type": "string" },
+                  "description": { "type": ["string", "null"] },
+                  "completed": { "type": "boolean", "enum": [false] },
+                  "user_id": { "type": "string" },
+                  "created_at": { "type": "string", "format": "date-time" }
+                },
+                "required": ["id", "title", "completed", "user_id", "created_at"]
+              }
+            },
+            "required": ["success", "task"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [false] },
+              "error": { "type": "string" }
+            },
+            "required": ["success", "error"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_tasks",
+      "description": "Retrieves tasks for the authenticated user with optional status filter.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "Authenticated user ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["all", "pending", "completed"],
+            "default": "all",
+            "description": "Filter tasks by completion status"
+          }
+        },
+        "required": ["user_id"]
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [true] },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "title": { "type": "string" },
+                    "description": { "type": ["string", "null"] },
+                    "completed": { "type": "boolean" },
+                    "created_at": { "type": "string", "format": "date-time" },
+                    "updated_at": { "type": "string", "format": "date-time" }
+                  },
+                  "required": ["id", "title", "completed", "created_at", "updated_at"]
+                }
+              },
+              "count": { "type": "integer", "minimum": 0 }
+            },
+            "required": ["success", "tasks", "count"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [false] },
+              "error": { "type": "string" }
+            },
+            "required": ["success", "error"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "complete_task",
+      "description": "Marks a task as completed (idempotent). Does not toggle — always sets completed=true.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "Authenticated user ID — enforces ownership"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the task to mark complete"
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [true] },
+              "task": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "format": "uuid" },
+                  "title": { "type": "string" },
+                  "completed": { "type": "boolean", "enum": [true] },
+                  "updated_at": { "type": "string", "format": "date-time" }
+                },
+                "required": ["id", "title", "completed", "updated_at"]
+              }
+            },
+            "required": ["success", "task"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [false] },
+              "error": { "type": "string" }
+            },
+            "required": ["success", "error"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "delete_task",
+      "description": "Permanently removes a task. Irreversible.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "Authenticated user ID — enforces ownership"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the task to delete"
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [true] },
+              "deleted_task_id": { "type": "string", "format": "uuid" },
+              "message": { "type": "string" }
+            },
+            "required": ["success", "deleted_task_id", "message"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [false] },
+              "error": { "type": "string" }
+            },
+            "required": ["success", "error"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "update_task",
+      "description": "Updates the title and/or description of a task. At least one field required.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "Authenticated user ID — enforces ownership"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the task to update"
+          },
+          "title": {
+            "type": "string",
+            "description": "New task title. 1–200 chars. Replaces existing if provided.",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "New description. Pass empty string to clear. Max 1000 chars.",
+            "maxLength": 1000
+          }
+        },
+        "required": ["user_id", "task_id"]
+      },
+      "outputSchema": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [true] },
+              "task": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "format": "uuid" },
+                  "title": { "type": "string" },
+                  "description": { "type": ["string", "null"] },
+                  "completed": { "type": "boolean" },
+                  "updated_at": { "type": "string", "format": "date-time" }
+                },
+                "required": ["id", "title", "completed", "updated_at"]
+              }
+            },
+            "required": ["success", "task"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": { "type": "boolean", "enum": [false] },
+              "error": { "type": "string" }
+            },
+            "required": ["success", "error"]
+          }
+        ]
+      }
+    }
+  ]
+}

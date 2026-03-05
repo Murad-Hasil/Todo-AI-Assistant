@@ -1,0 +1,28 @@
+# Environment secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+dist/
+
+# Node
+node_modules/
+
+# Claude Code — only exclude worktrees (temp agent dirs with nested .git) and playwright
+.claude/worktrees/
+.playwright-mcp/
+
+# Tools
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# K8s deployment secrets — NEVER commit
+todo-web-app/k8s/charts/todoai/secrets.values.yaml
+secrets.values.yaml

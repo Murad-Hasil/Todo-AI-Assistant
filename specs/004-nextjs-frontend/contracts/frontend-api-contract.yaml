@@ -1,0 +1,208 @@
+openapi: "3.1.0"
+info:
+  title: Frontend API Contract — Phase 2.3
+  description: >
+    Describes the API calls the Next.js frontend makes to the FastAPI backend.
+    All calls go through src/lib/api.ts. All calls include Authorization: Bearer <jwt>.
+    No new backend endpoints are created — this uses the Phase 2.1/2.2 backend.
+  version: "2.3.0"
+
+servers:
+  - url: "${NEXT_PUBLIC_API_URL}"
+    description: FastAPI backend (configurable via env var)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        HS256 JWT from Better Auth's /api/auth/token endpoint.
+        Retrieved by authClient.token() before each API call.
+
+  schemas:
+    Task:
+      type: object
+      required: [id, user_id, title, completed, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string }
+        title: { type: string, maxLength: 200 }
+        description: { type: string, nullable: true }
+        completed: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    TaskCreateInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string, nullable: true }
+
+    TaskUpdateInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string, nullable: true }
+
+    TaskSingleResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: "#/components/schemas/Task" }
+
+    TaskListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+        meta:
+          type: object
+          properties:
+            total: { type: integer }
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/{userId}/tasks:
+    get:
+      operationId: getTasks
+      summary: Fetch all tasks for the authenticated user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+          description: Must equal the JWT sub claim
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, pending, completed]
+            default: all
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created, title, due_date]
+            default: created
+      responses:
+        "200":
+          description: Task list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskListResponse" }
+        "401": { description: "Invalid or missing JWT" }
+        "403": { description: "URL userId does not match JWT sub" }
+
+    post:
+      operationId: createTask
+      summary: Create a new task
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskCreateInput" }
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskSingleResponse" }
+        "401": { description: "Invalid or missing JWT" }
+        "422": { description: "Validation error" }
+
+  /api/{userId}/tasks/{taskId}:
+    get:
+      operationId: getTask
+      summary: Fetch a single task
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskSingleResponse" }
+        "401": { description: "Invalid JWT" }
+        "404": { description: "Task not found" }
+
+    put:
+      operationId: updateTask
+      summary: Update task title/description
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskUpdateInput" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskSingleResponse" }
+        "401": { description: "Invalid JWT" }
+        "404": { description: "Task not found" }
+
+    delete:
+      operationId: deleteTask
+      summary: Delete a task
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: "Task deleted" }
+        "401": { description: "Invalid JWT" }
+        "404": { description: "Task not found" }
+
+  /api/{userId}/tasks/{taskId}/complete:
+    patch:
+      operationId: toggleTask
+      summary: Toggle task completion status
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TaskSingleResponse" }
+        "401": { description: "Invalid JWT" }
+        "404": { description: "Task not found" }

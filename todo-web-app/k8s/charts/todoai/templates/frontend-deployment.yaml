@@ -1,0 +1,74 @@
+# [Task]: T-4.6 — Next.js frontend Deployment with readiness probe
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todoai-frontend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: todoai-frontend
+    app.kubernetes.io/part-of: todoai
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: todoai-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: todoai-frontend
+        app.kubernetes.io/part-of: todoai
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.port }}
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "{{ .Values.frontend.port }}"
+            - name: NODE_ENV
+              value: "production"
+            # Better Auth requires these at runtime (not build time)
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: todoai-backend-secret
+                  key: BETTER_AUTH_SECRET
+            - name: BETTER_AUTH_URL
+              value: {{ .Values.frontend.betterAuthUrl | quote }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: todoai-backend-secret
+                  key: DATABASE_URL
+            # Bind Next.js standalone server to all interfaces inside the container
+            - name: HOSTNAME
+              value: "0.0.0.0"
+          resources:
+            requests:
+              memory: {{ .Values.frontend.resources.requests.memory | quote }}
+              cpu: {{ .Values.frontend.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.frontend.resources.limits.memory | quote }}
+              cpu: {{ .Values.frontend.resources.limits.cpu | quote }}
+          # Liveness probe — restarts pod if Next.js server stops responding
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.frontend.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 10
+          # Readiness probe — gates traffic until Next.js server is ready
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.frontend.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 10

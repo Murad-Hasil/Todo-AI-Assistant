@@ -1,0 +1,74 @@
+# [Task]: T-4.5 — FastAPI backend Deployment with liveness + readiness probes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todoai-backend
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: todoai-backend
+    app.kubernetes.io/part-of: todoai
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: todoai-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: todoai-backend
+        app.kubernetes.io/part-of: todoai
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.port }}
+              protocol: TCP
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: todoai-backend-secret
+                  key: DATABASE_URL
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: todoai-backend-secret
+                  key: BETTER_AUTH_SECRET
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: todoai-backend-secret
+                  key: GROQ_API_KEY
+            - name: CORS_ORIGINS
+              valueFrom:
+                secretKeyRef:
+                  name: todoai-backend-secret
+                  key: CORS_ORIGINS
+          resources:
+            requests:
+              memory: {{ .Values.backend.resources.requests.memory | quote }}
+              cpu: {{ .Values.backend.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.backend.resources.limits.memory | quote }}
+              cpu: {{ .Values.backend.resources.limits.cpu | quote }}
+          # Readiness probe — gates traffic until FastAPI is fully initialized
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          # Liveness probe — triggers pod restart if FastAPI becomes unresponsive
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+            timeoutSeconds: 5

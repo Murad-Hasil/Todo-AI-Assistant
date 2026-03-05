@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .mesh-bg-auth {
+    background-color: #0b0b18;
+    background-image:
+      radial-gradient(at 20% 25%, hsl(239, 84%, 67%) 0px, transparent 55%),
+      radial-gradient(at 80% 10%, hsl(189, 100%, 56%) 0px, transparent 50%),
+      radial-gradient(at 50% 90%, hsl(271, 91%, 65%) 0px, transparent 55%);
+  }
+  .mesh-bg-landing {
+    background-color: #060611;
+    background-image:
+      radial-gradient(at 0% 0%, hsl(225, 75%, 60%) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsl(262, 83%, 58%) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, hsl(198, 93%, 60%) 0px, transparent 50%);
+  }
+}
