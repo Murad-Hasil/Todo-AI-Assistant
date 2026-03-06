@@ -52,7 +52,9 @@ export default function RegisterPage() {
             result.error.message ?? "Could not create account. Please try again.",
         })
       } else {
-        router.push("/dashboard")
+        // Full page navigation — ensures session cookie is committed before
+        // dashboard/layout.tsx reads it server-side. router.push() races with cookie storage.
+        window.location.href = "/dashboard"
       }
     } catch {
       setErrors({ general: "Something went wrong. Please try again." })

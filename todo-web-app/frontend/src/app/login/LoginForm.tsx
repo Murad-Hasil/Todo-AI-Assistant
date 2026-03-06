@@ -46,7 +46,10 @@ export default function LoginForm() {
       if (result.error) {
         setErrors({ general: result.error.message ?? "Invalid email or password." })
       } else {
-        router.push("/dashboard")
+        // Full page navigation — ensures the session cookie is fully committed
+        // to the browser before the server reads it in dashboard/layout.tsx.
+        // router.push() is client-side and races with cookie storage.
+        window.location.href = "/dashboard"
       }
     } catch {
       setErrors({ general: "Something went wrong. Please try again." })
