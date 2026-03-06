@@ -27,6 +27,10 @@ spec:
               containerPort: {{ .Values.backend.port }}
               protocol: TCP
           env:
+            # PORT must match backend.port in values.yaml (default: 8000).
+            # Overrides the Dockerfile default of 7860 (which is for HF Space only).
+            - name: PORT
+              value: "{{ .Values.backend.port }}"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
