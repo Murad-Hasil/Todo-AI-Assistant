@@ -26,3 +26,6 @@ node_modules/
 # K8s deployment secrets — NEVER commit
 todo-web-app/k8s/charts/todoai/secrets.values.yaml
 secrets.values.yaml
+
+# Local notes — sirf apne liye, GitHub pe nahi jaana chahiye
+COMMANDS.md
