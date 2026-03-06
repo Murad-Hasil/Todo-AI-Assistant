@@ -1,0 +1,3 @@
+[submodule "todo-web-app/backend"]
+	path = todo-web-app/backend
+	url = https://huggingface.co/spaces/Mb-Murad/todo-ai-assistant
