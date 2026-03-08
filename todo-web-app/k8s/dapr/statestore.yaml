@@ -1,0 +1,28 @@
+# [Task]: T-5.2.2, T-5.2.3 (T017 fallback) — Dapr State Store via Neon PostgreSQL (direct endpoint)
+# Spec: FR-007, FR-008, FR-009 — state.postgresql v1, direct connection for DDL support
+# DIRECT_DATABASE_URL = non-pooler Neon endpoint; avoids pgBouncer transaction mode DDL block
+# T017 FALLBACK ACTIVE: direct endpoint DDL times out from Minikube (3s cold-start)
+# disableEntityManagement: "true" — skips CREATE TABLE; uses pre-created dapr_state + dapr_metadata
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: todoai-statestore
+  namespace: default
+spec:
+  type: state.postgresql
+  version: v1
+  metadata:
+    - name: connectionString
+      secretKeyRef:
+        name: dapr-secrets
+        key: DIRECT_DATABASE_URL
+    - name: tableName
+      value: "dapr_state"
+    - name: metadataTableName
+      value: "dapr_metadata"
+    - name: cleanupInterval
+      value: "1h"
+    - name: disableEntityManagement
+      value: "true"
+auth:
+  secretStore: kubernetes
