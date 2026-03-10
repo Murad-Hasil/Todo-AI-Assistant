@@ -17,6 +17,12 @@ spec:
       labels:
         app.kubernetes.io/name: todoai-frontend
         app.kubernetes.io/part-of: todoai
+      # [Task]: T-5.1.6 — Dapr sidecar injection (FR-004, FR-006, Principle XIII)
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "todo-frontend"
+        dapr.io/app-port: "3000"
+        dapr.io/log-level: "info"
     spec:
       containers:
         - name: frontend
@@ -47,6 +53,9 @@ spec:
             # Bind Next.js standalone server to all interfaces inside the container
             - name: HOSTNAME
               value: "0.0.0.0"
+            # In-cluster backend URL for SSR (server-side fetch in Next.js pods)
+            - name: BACKEND_URL
+              value: "http://todoai-backend-svc:8000"
           resources:
             requests:
               memory: {{ .Values.frontend.resources.requests.memory | quote }}

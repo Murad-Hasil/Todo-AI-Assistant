@@ -41,6 +41,12 @@ frontend:
     limits:
       memory: "384Mi"
       cpu: "500m"
-  # Better Auth — override in secrets.values.yaml with the Minikube IP NodePort URL
-  # Example: http://192.168.49.2:30300
-  betterAuthUrl: ""
+  # Better Auth — public URL of the Next.js app used for redirects and CSRF checks.
+  # Default: localhost:3000 (kubectl port-forward). Override in secrets.values.yaml for Minikube NodePort.
+  betterAuthUrl: "http://localhost:3000"
+
+# [Task]: T027 — Dapr sidecar injection toggle
+# Set enabled: false for non-Dapr environments (e.g. HF Space)
+dapr:
+  enabled: true
+  logLevel: "info"

@@ -1,0 +1,12 @@
+# [Task]: T-5.1.4 — Subscription: task-updates → todo-frontend (Phase 5.4)
+# Using v2alpha1 (cluster default)
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: task-updates-subscription
+  namespace: default
+spec:
+  pubsubname: todoai-pubsub
+  topic: task-updates
+  routes:
+    default: /api/events/task-update

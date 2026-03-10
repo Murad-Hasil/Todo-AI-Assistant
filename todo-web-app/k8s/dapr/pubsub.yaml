@@ -1,0 +1,38 @@
+# [Task]: T-5.1.2 — Dapr PubSub Component via Redpanda Cloud (Kafka)
+# Spec: FR-001, FR-002 — pubsub.kafka v1, SASL/SHA-256, 3 topics
+# Credentials sourced from dapr-secrets K8s Secret (never hardcoded)
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: todoai-pubsub
+  namespace: default
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+    - name: brokers
+      secretKeyRef:
+        name: dapr-secrets
+        key: REDPANDA_BOOTSTRAP_SERVER
+    - name: authType
+      value: "password"
+    - name: saslUsername
+      secretKeyRef:
+        name: dapr-secrets
+        key: REDPANDA_USERNAME
+    - name: saslPassword
+      secretKeyRef:
+        name: dapr-secrets
+        key: REDPANDA_PASSWORD
+    - name: saslMechanism
+      value: "SHA-256"
+    - name: consumerGroup
+      value: "todoai-consumers"
+    - name: clientID
+      value: "todoai-dapr"
+    - name: maxMessageBytes
+      value: "1048576"
+    - name: tls
+      value: "true"
+auth:
+  secretStore: kubernetes

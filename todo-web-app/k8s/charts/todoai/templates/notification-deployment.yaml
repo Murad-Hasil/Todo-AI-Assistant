@@ -1,0 +1,42 @@
+# [Task]: T-5.3.6
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todoai-notification
+  labels:
+    app.kubernetes.io/name: todoai-notification
+    app.kubernetes.io/part-of: todoai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: todoai-notification
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: todoai-notification
+        app.kubernetes.io/part-of: todoai
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "todo-notification-service"
+        dapr.io/app-port: "8080"
+        dapr.io/log-level: "info"
+    spec:
+      containers:
+        - name: notification
+          image: todo-notification:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
