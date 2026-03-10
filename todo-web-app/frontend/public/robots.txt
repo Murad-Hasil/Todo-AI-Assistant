@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+
+Disallow: /dashboard
+Disallow: /api/
+
+Sitemap: https://murad-hasil-todo-ai.vercel.app/sitemap.xml

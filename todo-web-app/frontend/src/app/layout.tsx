@@ -13,10 +13,65 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-// [Task]: T-3.4.4
+const siteUrl = "https://murad-hasil-todo-ai.vercel.app";
+
+// [Task]: T-3.4.4 — Enterprise SEO & Metadata
 export const metadata: Metadata = {
-  title: "TodoAI",
-  description: "AI-powered task management",
+  applicationName: "TodoAI Evolution",
+  title: "TodoAI | Distributed Intelligence & Event-Driven Productivity",
+  description:
+    "An enterprise-grade AI task management system utilizing a distributed architecture with Next.js, FastAPI, Kubernetes, and Kafka. Engineered for high scalability and intelligent automation.",
+  keywords: [
+    "AI Software Architecture",
+    "Distributed Systems",
+    "Cloud Native SaaS",
+    "Event Driven Microservices",
+    "Full Stack AI Development",
+  ],
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "TodoAI Evolution",
+    title: "TodoAI: The Architecture of Intelligence",
+    description:
+      "Explore a fully containerized, Kafka-powered AI Todo system built with Spec-Driven Development.",
+    images: [
+      {
+        url: "/og-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "TodoAI — Distributed Intelligence & Event-Driven Productivity",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TodoAI: The Architecture of Intelligence",
+    description:
+      "Explore a fully containerized, Kafka-powered AI Todo system built with Spec-Driven Development.",
+    images: ["/og-preview.png"],
+  },
+  themeColor: "#0f172a",
+  icons: {
+    icon: "/favicon.ico",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "TodoAI Evolution",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "An enterprise-grade AI task management system utilizing a distributed architecture with Next.js, FastAPI, Kubernetes, and Kafka.",
+  url: siteUrl,
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +81,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
