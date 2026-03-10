@@ -268,7 +268,7 @@ Verified live links (already in README — confirm at submission):
 
 | Service | URL | Status check |
 |---------|-----|-------------|
-| Frontend | https://frontend-murad-hasils-projects.vercel.app | Load landing page |
+| Frontend | https://murad-hasil-todo-ai.vercel.app | Load landing page |
 | Backend API | https://mb-murad-todo-ai-assistant.hf.space | GET / → `{"message":"Todo AI Backend is Running"}` |
 | API Health | https://mb-murad-todo-ai-assistant.hf.space/api/health | GET → `{"status":"ok"}` |
 | GitHub Repo | https://github.com/Murad-Hasil/Todo-AI-Assistant | Public access |
@@ -355,7 +355,7 @@ kubectl port-forward svc/todoai-backend-svc 8000:8000 &
 
 | Test | Action | Expected |
 |------|--------|----------|
-| A1 | Open https://frontend-murad-hasils-projects.vercel.app | Landing page loads, hero section visible |
+| A1 | Open https://murad-hasil-todo-ai.vercel.app | Landing page loads, hero section visible |
 | A2 | Click "Get Started" → register new user | Dashboard loads, no console errors |
 | A3 | Sign out → sign in with same credentials | Dashboard loads again |
 | A4 | Create a task via the input field | Task card appears in grid |

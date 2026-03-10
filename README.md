@@ -2,7 +2,7 @@
 
 A full-stack, event-driven todo application with an AI chatbot assistant, built across 5 progressive phases as part of the Panaversity Hackathon II.
 
-[![Frontend](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://frontend-murad-hasils-projects.vercel.app)
+[![Frontend](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://murad-hasil-todo-ai.vercel.app)
 [![Backend](https://img.shields.io/badge/Backend-HuggingFace-yellow?logo=huggingface)](https://mb-murad-todo-ai-assistant.hf.space)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/Murad-Hasil/Todo-AI-Assistant)
 
@@ -21,7 +21,7 @@ A full-stack, event-driven todo application with an AI chatbot assistant, built 
 
 | Service | URL | Notes |
 |---------|-----|-------|
-| **Frontend** | https://frontend-murad-hasils-projects.vercel.app | Always-on (Vercel) |
+| **Frontend** | https://murad-hasil-todo-ai.vercel.app | Always-on (Vercel) |
 | **Backend API** | https://mb-murad-todo-ai-assistant.hf.space | ~30s cold-start on first request |
 | **API Health** | https://mb-murad-todo-ai-assistant.hf.space/api/health | Returns `{"status":"ok"}` |
 

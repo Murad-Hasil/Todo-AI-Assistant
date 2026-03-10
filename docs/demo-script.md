@@ -3,7 +3,7 @@
 **Target duration**: 90 seconds
 **Environment**: Production (Vercel + HuggingFace Space)
 **URLs**:
-- Frontend: https://frontend-murad-hasils-projects.vercel.app
+- Frontend: https://murad-hasil-todo-ai.vercel.app
 - Backend health: https://mb-murad-todo-ai-assistant.hf.space/api/health
 
 ---
@@ -21,7 +21,7 @@
 ## Script (90 seconds)
 
 ### [0:00 – 0:10] Landing Page
-**Action**: Open https://frontend-murad-hasils-projects.vercel.app
+**Action**: Open https://murad-hasil-todo-ai.vercel.app
 **Say/Show**: Landing page with hero section and feature grid loads.
 **Expected**: Animated hero, "Get Started" button visible.
 
