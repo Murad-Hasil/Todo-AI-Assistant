@@ -12,7 +12,7 @@
 - [x] Backend responds within 35s (accounting for cold-start)
 
 ### Frontend (Vercel)
-- [x] https://frontend-murad-hasils-projects.vercel.app loads landing page
+- [x] https://murad-hasil-todo-ai.vercel.app loads landing page
 - [x] `/login` and `/register` pages render correctly
 - [x] Sign-in flow completes → redirects to `/dashboard`
 - [x] Task creation works (POST to HF backend)
