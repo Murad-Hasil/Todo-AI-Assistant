@@ -127,7 +127,7 @@ TodoAI is a production-grade task manager where users can:
 ```
 hackathon-II/
 ├── todo-web-app/
-│   ├── backend/              # Git submodule → HuggingFace Space repo
+│   ├── backend/              # Git submodule → HuggingFace Space repo (see link below)
 │   │   └── app/
 │   │       ├── main.py       # FastAPI entry point
 │   │       ├── agent/        # OpenAI Agents SDK + Groq
@@ -207,6 +207,14 @@ kubectl port-forward svc/todoai-backend-svc 8000:8000
 | `REDPANDA_BOOTSTRAP_SERVER` | Redpanda Cloud broker host:port |
 | `REDPANDA_USERNAME` | Redpanda SASL username |
 | `REDPANDA_PASSWORD` | Redpanda SASL password |
+
+---
+
+## Backend Source Code
+
+The backend appears as `backend @ 0f60ee1` on GitHub because it is a **git submodule** pointing to a HuggingFace Space repository — GitHub cannot navigate to non-GitHub submodule URLs.
+
+**View backend code directly here:** https://huggingface.co/spaces/Mb-Murad/todo-ai-assistant/tree/main
 
 ---
 
