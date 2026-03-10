@@ -64,3 +64,84 @@ minikube service todoai-frontend
 - Helm 3, Minikube 1.32+, `imagePullPolicy: Never` (local images only)
 - `NEXT_PUBLIC_API_URL` baked at build time via `--build-arg`
 - `CORS_ORIGINS` injected at runtime via Kubernetes Secret
+
+## Phase 5.3: Event-Driven Notification Service (010-notification-service)
+
+### Quick Deploy (notification service)
+
+```bash
+# 1. Build notification image into Minikube's Docker daemon
+eval $(minikube docker-env)
+docker build -t todo-notification:local ./todo-web-app/services/notification/
+
+# 2. Apply Dapr subscription manifest
+kubectl apply -f todo-web-app/k8s/dapr/subscription-reminders.yaml
+
+# 3. Deploy with Helm (adds notification deployment + service)
+helm upgrade --install todoai ./todo-web-app/k8s/charts/todoai \
+  --values ./todo-web-app/k8s/charts/todoai/secrets.values.yaml
+
+# 4. Verify all 3 pods running (backend 2/2, frontend 2/2, notification 2/2)
+kubectl get pods
+```
+
+### Microservice Log Commands
+
+```bash
+# Follow notification service logs (reminder delivery):
+kubectl logs -f -l app.kubernetes.io/name=todoai-notification -c notification
+
+# Follow backend logs (reminder publish events):
+kubectl logs -f -l app.kubernetes.io/name=todoai-backend -c backend
+
+# Check all pod statuses:
+kubectl get pods -o wide
+
+# Verify Dapr subscription:
+kubectl get subscriptions.dapr.io
+
+# End-to-end reminder smoke test (direct Dapr publish):
+BACKEND_POD=$(kubectl get pods -l app.kubernetes.io/name=todoai-backend -o jsonpath='{.items[0].metadata.name}')
+kubectl exec "$BACKEND_POD" -c backend -- python3 -c "
+import urllib.request, json
+payload = json.dumps({
+    'action': 'reminder',
+    'task_id': 'e2e-test-001',
+    'task_title': 'remind me to buy milk',
+    'user_id': 'test-user',
+    'timestamp': '2026-03-09T04:00:00+00:00'
+}).encode()
+req = urllib.request.Request(
+    'http://localhost:3500/v1.0/publish/todoai-pubsub/reminders',
+    data=payload,
+    headers={'Content-Type': 'application/json'},
+    method='POST'
+)
+print('Published:', urllib.request.urlopen(req, timeout=10).status)
+"
+
+# Isolation test (US2 — scale down and recover):
+kubectl scale deployment/todoai-notification --replicas=0
+# ... create reminder tasks ...
+kubectl scale deployment/todoai-notification --replicas=1
+kubectl rollout status deployment/todoai-notification
+kubectl logs -l app.kubernetes.io/name=todoai-notification -c notification | grep REMINDER
+```
+
+### Notification Service Structure
+
+```
+todo-web-app/services/notification/
+├── app/
+│   ├── __init__.py
+│   └── main.py          # FastAPI app — POST /on-reminder, GET /healthz
+├── Dockerfile           # multi-stage python:3.13-slim, port 8080
+└── pyproject.toml       # fastapi>=0.115.0, uvicorn[standard]>=0.30.0
+```
+
+### Keyword Trigger (backend routes/tasks.py)
+
+- Keywords: `["remind me", "alert"]` — case-insensitive substring match in task title
+- On match: `publish_reminder_event()` fired as BackgroundTask → Dapr sidecar → Kafka `reminders` topic
+- Notification service subscribes via `todo-web-app/k8s/dapr/subscription-reminders.yaml`
+- Dapr app-id: `todo-notification-service`

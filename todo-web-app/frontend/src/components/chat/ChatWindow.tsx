@@ -23,6 +23,7 @@ import {
   ServerError,
   NetworkError,
   ForbiddenError,
+  RateLimitError,
 } from "@/lib/api"
 import MessageBubble from "./MessageBubble"
 import ChatInput from "./ChatInput"
@@ -81,6 +82,8 @@ function toErrorMessage(err: unknown): string {
   if (err instanceof ForbiddenError) return "Access denied."
   if (err instanceof NetworkError)
     return "Unable to reach server. Check your connection."
+  if (err instanceof RateLimitError)
+    return "Too many requests. Please wait a moment and try again."
   if (err instanceof ServerError && (err as ServerError).status === 503)
     return "AI service unavailable. Please try again."
   if (err instanceof ServerError) return "Something went wrong. Please try again."
@@ -254,7 +257,7 @@ export default function ChatWindow({ userId }: ChatWindowProps) {
       }
 
       // [Task]: T-3.3.8 — Refresh task list when AI performs a write operation
-      if (data.tool_calls.some((t) => WRITE_TOOLS.has(t))) {
+      if (Array.isArray(data.tool_calls) && data.tool_calls.some((t) => WRITE_TOOLS.has(t))) {
         router.refresh()
       }
     } catch (err) {

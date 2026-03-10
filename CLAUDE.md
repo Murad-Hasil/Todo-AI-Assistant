@@ -229,6 +229,12 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - kubectl-ai for AIOps cluster inspection (natural language pod/log queries) — `007-local-k8s-deploy`
 - Python 3.13 (backend), Node.js 20 (frontend build + runner) + FastAPI 0.115+, uvicorn[standard] 0.30+, uv (dependency manager), Next.js 16.1.6, Helm 3, Minikube 1.32+ (007-local-k8s-deploy)
 - Neon Serverless PostgreSQL (external managed service — no in-cluster database) (007-local-k8s-deploy)
+- YAML (Kubernetes manifests), Bash (install scripts) + Dapr 1.13+ (control plane + CLI), Helm 3, Minikube 1.32+, pubsub.kafka v1, state.postgresql v1 (008-dapr-kafka-infra)
+- Neon Serverless PostgreSQL (state store) + Redpanda Cloud (Kafka broker — external managed) (008-dapr-kafka-infra)
+- Python 3.13 (backend), YAML (K8s manifests) + FastAPI 0.115+, httpx>=0.27.0, Dapr HTTP API (localhost:3500), Kubernetes Secrets (009-audit-statestore)
+- Neon PostgreSQL (pooler for app CRUD; direct endpoint for Dapr statestore DDL) (009-audit-statestore)
+- Python 3.13 (notification service) + Python 3.13 (backend extension) + FastAPI 0.115+, uvicorn[standard] 0.30+ (notification service); httpx 0.27+ (backend events.py — already present) (010-notification-service)
+- None — notification service is stateless. No DB table changes. (010-notification-service)
 
 ## Recent Changes
 - 001-phase1-todo-cli: Added Python 3.13 + Standard library only — `dataclasses`, `sys`, `textwrap`

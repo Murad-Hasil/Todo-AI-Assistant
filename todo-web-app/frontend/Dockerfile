@@ -21,8 +21,9 @@ RUN npm ci --legacy-peer-deps
 # Copy all source files
 COPY . .
 
-# NEXT_PUBLIC_API_URL must be provided at build time — it is inlined into the bundle
-ARG NEXT_PUBLIC_API_URL
+# NEXT_PUBLIC_API_URL must be provided at build time — it is inlined into the bundle.
+# Default: localhost:8000 (kubectl port-forward). Override for Minikube NodePort or production.
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Ensure public directory exists so Next.js build does not fail when it is absent

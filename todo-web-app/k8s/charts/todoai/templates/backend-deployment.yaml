@@ -17,6 +17,12 @@ spec:
       labels:
         app.kubernetes.io/name: todoai-backend
         app.kubernetes.io/part-of: todoai
+      # [Task]: T-5.1.5 — Dapr sidecar injection (FR-004, FR-005, Principle XIII)
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "todo-backend"
+        dapr.io/app-port: "8000"
+        dapr.io/log-level: "info"
     spec:
       containers:
         - name: backend
@@ -61,7 +67,7 @@ spec:
           # Readiness probe — gates traffic until FastAPI is fully initialized
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: {{ .Values.backend.port }}
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -70,7 +76,7 @@ spec:
           # Liveness probe — triggers pod restart if FastAPI becomes unresponsive
           livenessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: {{ .Values.backend.port }}
             initialDelaySeconds: 15
             periodSeconds: 20

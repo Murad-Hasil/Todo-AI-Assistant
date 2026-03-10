@@ -108,6 +108,13 @@ export class ServerError extends ApiError {
   }
 }
 
+export class RateLimitError extends ApiError {
+  constructor() {
+    super("Rate limit exceeded", 429)
+    this.name = "RateLimitError"
+  }
+}
+
 export class NetworkError extends Error {
   constructor(cause?: unknown) {
     super("Network error — unable to reach server")
@@ -118,7 +125,11 @@ export class NetworkError extends Error {
 
 // ─── Core Fetch Wrappers ──────────────────────────────────────────────────────
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+// Server-side (SSR): use BACKEND_URL (in-cluster); Client-side: use NEXT_PUBLIC_API_URL
+const BASE_URL =
+  (typeof window === "undefined" ? process.env.BACKEND_URL : undefined) ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:8000"
 
 function handleErrorStatus(response: Response, taskId?: string): void {
   if (response.status === 401) {
@@ -130,6 +141,7 @@ function handleErrorStatus(response: Response, taskId?: string): void {
   if (response.status === 403) throw new ForbiddenError()
   if (response.status === 404) throw new NotFoundError(taskId)
   if (response.status === 422) throw new ValidationError(null)
+  if (response.status === 429) throw new RateLimitError()
   if (response.status >= 500) throw new ServerError(response.status)
 }
 

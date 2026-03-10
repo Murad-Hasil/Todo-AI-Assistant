@@ -1,29 +1,32 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 2.0.0 → 2.1.0
-Bump type: MINOR — three new principles added (IX, X, XI); technical stack and
-  directory layout expanded; Phase 3 Core Features section added. No existing
-  principle was removed or fundamentally redefined; all Phase 2 gates stand.
-Modified principles: None (all I–VIII retained verbatim)
+Version change: 2.1.0 → 2.2.0
+Bump type: MINOR — four new principles added (XII, XIII, XIV, XV); Phase 5 tech
+  stack (Kafka, Dapr, Notification Service) and directory layout expanded;
+  Phase 5 Core Features section added. No existing principle was removed or
+  fundamentally redefined; all Phase 2–4 gates stand.
+Modified principles: None (all I–XI retained verbatim)
 Added sections:
-  - IX. Stateless AI Request Cycle (NEW — Phase 3 core constraint)
-  - X. MCP Tool Enforcement (NEW — AI agent tool boundary)
-  - XI. Agent Behavior Contract (NEW — UX + Roman Urdu bonus requirement)
-  - Phase 3 Core Features (NEW)
-  - Phase 3 directory additions: backend/app/agent/, backend/app/mcp/,
-    frontend/app/chat/, specs/chatbot/
+  - XII. Event-Driven Architecture (NEW — Phase 5 Kafka/Dapr coupling constraint)
+  - XIII. Dapr Sidecar Pattern (NEW — every pod must carry a Dapr sidecar)
+  - XIV. Infrastructure Abstraction (NEW — code talks Dapr APIs, not raw Kafka/PG)
+  - XV. Event Publishing Reliability (NEW — retry contract for event publishing)
+  - Phase 5 Core Features (NEW)
+  - Phase 5 directory additions:
+      todo-web-app/k8s/dapr/              (Dapr component manifests)
+      todo-web-app/services/notification/ (Notification microservice)
 Removed sections: None
 Templates requiring updates:
   ✅ .specify/templates/plan-template.md — Constitution Check gates are generic;
-     new principles IX–XI are self-documenting; no template edits required.
+     new principles XII–XV are self-documenting; no template edits required.
   ✅ .specify/templates/spec-template.md — Generic; no changes required.
   ✅ .specify/templates/tasks-template.md — Generic; no changes required.
   ✅ .specify/templates/phr-template.prompt.md — No changes required.
 Deferred items: None
 -->
 
-# Todo Web App — Phase 2 & 3 Constitution
+# Todo Web App — Phase 2, 3, 4 & 5 Constitution
 
 ## Core Principles
 
@@ -52,7 +55,9 @@ exclusively inside `/todo-web-app/backend/app/agent/`, `/todo-web-app/backend/ap
 and `/todo-web-app/frontend/app/chat/`. Agents MUST reject any refactor that
 would require Phase 2 contracts, route handlers, or SQLModel models to be broken
 or duplicated. The Phase 2 CRUD service layer MUST remain independently callable
-by the Phase 3 AI layer as MCP tools — never replaced.
+by the Phase 3 AI layer as MCP tools — never replaced. Phase 5 event-driven
+features MUST be additive — they MUST NOT modify Phase 2–4 route handlers,
+data models, or agent orchestration code without an explicit amendment.
 
 ### IV. API-First Architecture
 
@@ -72,7 +77,9 @@ violation; no task, user record, conversation, message, or derived resource MUST
 be returned or mutated without a matching `user_id` predicate. Agents MUST refuse
 to implement any endpoint or MCP tool that does not enforce user-scoped filtering.
 SQLModel queries MUST always include a `WHERE user_id = :current_user_id` clause
-or equivalent ORM filter for user-owned resources.
+or equivalent ORM filter for user-owned resources. Event payloads published to
+Kafka topics MUST embed `user_id` as a top-level field so that consumers can
+enforce isolation without additional database lookups.
 
 ### VI. JWT Security Contract
 
@@ -139,6 +146,57 @@ when a user writes in Roman Urdu, the agent MUST respond in Roman Urdu. The
 agent MUST NOT reveal internal MCP tool calls, raw JSON payloads, or implementation
 details to the end user.
 
+### XII. Event-Driven Architecture (PHASE 5 — NON-NEGOTIABLE)
+
+Services MUST NOT call each other directly via HTTP for any Phase 5 event flow.
+All inter-service communication for reminders, recurring task spawning, audit
+logging, and real-time sync MUST flow exclusively through Kafka topics (via Dapr
+Pub/Sub). Direct service-to-service HTTP calls are permitted ONLY via Dapr Service
+Invocation — never via raw `httpx`/`requests` client calls targeting pod IPs or
+Kubernetes service DNS names directly. Any new consumer service MUST subscribe to
+the appropriate Kafka topic through a Dapr subscription manifest; ad-hoc polling
+or direct broker connections in application code are forbidden. This ensures loose
+coupling, independent deployability, and resilience across all Phase 5 services.
+
+### XIII. Dapr Sidecar Pattern
+
+Every pod deployed in Phase 5 — including the FastAPI backend, Next.js frontend,
+and the Notification Service — MUST carry a Dapr sidecar container. Kubernetes
+Deployment manifests MUST include the Dapr annotations:
+`dapr.io/enabled: "true"`, `dapr.io/app-id: "<service-id>"`, and
+`dapr.io/app-port: "<port>"`. No Phase 5 service MUST publish or subscribe to
+events, access state stores, or invoke bindings without routing through its Dapr
+sidecar — bypassing the sidecar (e.g., calling the Kafka broker directly) is a
+principle violation. Dapr component YAML manifests MUST reside exclusively under
+`/todo-web-app/k8s/dapr/` and MUST be applied to the cluster before any Phase 5
+workload is deployed.
+
+### XIV. Infrastructure Abstraction
+
+Application code MUST interact with Kafka, PostgreSQL state stores, and any
+external binding exclusively through the Dapr API surface — either the Dapr Python
+SDK (`dapr-client`) or the Dapr HTTP API (`http://localhost:3500/v1.0/...`).
+Direct Kafka client libraries (e.g., `confluent-kafka`, `kafka-python`) MUST NOT
+be imported in application code. Direct PostgreSQL connections for Dapr state
+management MUST NOT be opened in application code — use the Dapr state management
+API instead. This abstraction ensures that the underlying broker or store can be
+swapped (e.g., Redpanda → Strimzi, PostgreSQL → Redis) without modifying
+application code — only Dapr component manifests change.
+
+### XV. Event Publishing Reliability
+
+Every event publisher MUST implement retry logic with exponential backoff for
+Dapr `publishEvent` calls. The minimum retry policy is: 3 attempts, initial
+backoff 200 ms, multiplier 2, max backoff 5 s. Failed publish attempts MUST be
+logged at `ERROR` level with the topic name, event payload, and attempt count.
+Agents MUST surface retry-exhausted failures as HTTP 503 to the caller rather
+than silently dropping events. The AI Agent MUST be capable of triggering
+"Reminder" events via an MCP tool (`schedule_reminder`) that publishes to the
+`reminders` Kafka topic through the Dapr sidecar — this tool MUST follow the same
+retry contract. Event consumers MUST be idempotent: processing the same event
+twice MUST NOT produce duplicate side effects (e.g., duplicate tasks, duplicate
+audit log entries).
+
 ## Technical Stack & Environment
 
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS
@@ -154,12 +212,22 @@ details to the end user.
 - **ORM**: SQLModel (wraps SQLAlchemy + Pydantic)
 - **Authentication**: Better Auth (frontend session management) +
   JWT Token Verification (backend enforcement — shared by Phase 2 and Phase 3)
-- **Deployment**: Vercel (frontend), FastAPI service (backend)
+- **Messaging (Phase 5)**: Kafka via Redpanda Cloud or Strimzi Operator
+  - Topics: `task-events` (audit/CRUD events), `reminders` (scheduled alerts)
+- **Distributed Runtime (Phase 5)**: Dapr (Pub/Sub, State Management, Bindings)
+  - Dapr Python SDK: `dapr-client`
+  - Dapr HTTP API: `http://localhost:3500/v1.0/...` (sidecar endpoint)
+- **Notification Service (Phase 5)**: New Python 3.13 FastAPI microservice
+  - Location: `/todo-web-app/services/notification/`
+  - Subscribes to `reminders` and `task-events` topics via Dapr
+- **Deployment**: Vercel (frontend production), Minikube (local K8s — all services)
+  - Phase 5 local: Minikube with Dapr control plane + Strimzi/Redpanda operator
 - **Environment**: WSL 2 (Ubuntu 22.04) for local development
 - **Package Managers**: `uv` (Python), `npm` / `pnpm` (Node)
 - **Secrets**: No hardcoded tokens or credentials; use `.env` files and
-  document all variables in `README.md`. Required Phase 3 vars:
-  `GROQ_API_KEY`, `OPENAI_BASE_URL` (set to Groq endpoint).
+  document all variables in `README.md`. Required Phase 5 vars:
+  `KAFKA_BOOTSTRAP_SERVERS` (if Redpanda Cloud), `DAPR_HTTP_PORT` (default 3500),
+  `DAPR_GRPC_PORT` (default 50001), `NOTIFICATION_SERVICE_APP_ID`.
 
 ## Core Features & Directory Layout
 
@@ -183,6 +251,22 @@ details to the end user.
 6. Roman Urdu Support — Agent detects and responds in Roman Urdu (bonus)
 7. Graceful Error Handling — User-friendly messages for all agent and tool errors
 
+### Phase 5 Core Features (Event-Driven)
+
+1. Activity/Audit Log — Every CRUD operation publishes an event to the `task-events`
+   Kafka topic via Dapr Pub/Sub; events include `user_id`, `task_id`, `action`,
+   and `timestamp`
+2. Reminder/Notification System — Users (or the AI Agent) schedule reminders by
+   publishing to the `reminders` Kafka topic; the Notification Service consumes
+   these events and emits alerts (log-based in Phase 5, extensible to email/push)
+3. Recurring Task Engine — The Notification Service consumes reminder events and
+   uses Dapr Service Invocation to trigger new task creation in the backend when
+   a recurring pattern is detected
+4. Real-time Sync — Dapr Pub/Sub broadcasts task-change events to subscribed
+   frontend clients; WebSocket upgrade on the frontend may be used for delivery
+5. AI-Triggered Reminders — The AI Agent exposes a new MCP tool `schedule_reminder`
+   that publishes to the `reminders` topic through the Dapr sidecar with retry logic
+
 ### Directory Layout
 
 ```
@@ -203,19 +287,32 @@ details to the end user.
 │   │   ├── components/          # Shared UI components
 │   │   └── lib/                 # Client utilities and API helpers
 │   └── tests/
-└── backend/
-    ├── CLAUDE.md                # Backend-specific agent context
-    ├── app/
-    │   ├── models.py            # SQLModel ORM models (tasks, conversations, messages)
-    │   ├── schemas.py           # Pydantic request/response schemas
-    │   ├── db.py                # Database session and connection
-    │   ├── auth.py              # JWT dependency (shared by Phase 2 + Phase 3)
-    │   ├── main.py              # FastAPI app entry point
-    │   ├── routes/              # FastAPI route handlers (Phase 2 CRUD)
-    │   ├── agent/               # AI agent orchestration (Phase 3, OpenAI Agents SDK)
-    │   └── mcp/                 # MCP server + tool definitions (Phase 3)
-    ├── migrations/              # Alembic migration scripts
-    └── tests/
+├── backend/
+│   ├── CLAUDE.md                # Backend-specific agent context
+│   ├── app/
+│   │   ├── models.py            # SQLModel ORM models (tasks, conversations, messages)
+│   │   ├── schemas.py           # Pydantic request/response schemas
+│   │   ├── db.py                # Database session and connection
+│   │   ├── auth.py              # JWT dependency (shared by Phase 2 + Phase 3)
+│   │   ├── main.py              # FastAPI app entry point
+│   │   ├── routes/              # FastAPI route handlers (Phase 2 CRUD)
+│   │   ├── agent/               # AI agent orchestration (Phase 3, OpenAI Agents SDK)
+│   │   └── mcp/                 # MCP server + tool definitions (Phase 3 + Phase 5)
+│   ├── migrations/              # Alembic migration scripts
+│   └── tests/
+├── services/
+│   └── notification/            # Phase 5 — Notification microservice (Python 3.13)
+│       ├── main.py              # FastAPI entry point; Dapr subscriber
+│       ├── handlers.py          # Event handler logic (reminder, audit, recurring)
+│       ├── Dockerfile
+│       └── pyproject.toml
+└── k8s/
+    ├── charts/
+    │   └── todoai/              # Helm chart (backend + frontend)
+    └── dapr/                    # Phase 5 — Dapr component manifests
+        ├── pubsub.yaml          # Kafka Pub/Sub component (Dapr)
+        ├── statestore.yaml      # State store component (if used)
+        └── subscriptions/       # Dapr Subscription resources per service
 ```
 
 Agents MUST NOT create top-level directories outside this layout without an
@@ -241,4 +338,4 @@ approved amendment to this constitution.
    substantive agent interaction (implementation, planning, debugging,
    spec authoring).
 
-**Version**: 2.1.0 | **Ratified**: 2026-03-03 | **Last Amended**: 2026-03-03
+**Version**: 2.2.0 | **Ratified**: 2026-03-03 | **Last Amended**: 2026-03-08

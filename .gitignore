@@ -29,3 +29,5 @@ secrets.values.yaml
 
 # Local notes — sirf apne liye, GitHub pe nahi jaana chahiye
 COMMANDS.md
+TESTING.md
+k8s-start.sh
