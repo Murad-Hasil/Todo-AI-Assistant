@@ -6,6 +6,15 @@ A full-stack, event-driven todo application with an AI chatbot assistant, built 
 [![Backend](https://img.shields.io/badge/Backend-HuggingFace-yellow?logo=huggingface)](https://mb-murad-todo-ai-assistant.hf.space)
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/Murad-Hasil/Todo-AI-Assistant)
 
+![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-teal?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript&logoColor=white)
+![Dapr](https://img.shields.io/badge/Dapr-1.17-purple?logo=dapr&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-Minikube-326CE5?logo=kubernetes&logoColor=white)
+![Kafka](https://img.shields.io/badge/Kafka-Redpanda-orange?logo=apachekafka&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-green?logo=postgresql&logoColor=white)
+
 ---
 
 ## Live Demo
@@ -136,7 +145,8 @@ hackathon-II/
 ├── specs/                    # Feature specs (SDD methodology)
 ├── history/                  # Prompt History Records (PHRs)
 ├── docs/
-│   └── demo-script.md        # 90-second demo recording guide
+│   ├── demo-script.md        # 90-second demo recording guide
+│   └── local-setup.md        # Full Minikube + Dapr + Helm setup guide
 └── .specify/                 # SpecKit Plus templates
 ```
 
