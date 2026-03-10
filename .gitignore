@@ -11,8 +11,11 @@ venv/
 *.egg-info/
 dist/
 
-# Node
+# Node / Next.js build artifacts
 node_modules/
+.next/
+out/
+build/
 
 # Claude Code — only exclude worktrees (temp agent dirs with nested .git) and playwright
 .claude/worktrees/
