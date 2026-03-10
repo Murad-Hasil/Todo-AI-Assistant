@@ -36,21 +36,12 @@ export const metadata: Metadata = {
     title: "TodoAI: The Architecture of Intelligence",
     description:
       "Explore a fully containerized, Kafka-powered AI Todo system built with Spec-Driven Development.",
-    images: [
-      {
-        url: "/og-preview.png",
-        width: 1200,
-        height: 630,
-        alt: "TodoAI — Distributed Intelligence & Event-Driven Productivity",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "TodoAI: The Architecture of Intelligence",
     description:
       "Explore a fully containerized, Kafka-powered AI Todo system built with Spec-Driven Development.",
-    images: ["/og-preview.png"],
   },
   themeColor: "#0f172a",
   icons: {
