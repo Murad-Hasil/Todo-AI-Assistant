@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef, useEffect } from "react"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Trash2, Check, Pencil, X, Save } from "lucide-react"
-import type { Task } from "@/lib/api"
+import type { Task, TaskPriority } from "@/lib/api"
 import { fadeInUp, staggerContainer, springTransition, reducedVariants } from "@/lib/animations"
 import TaskPriorityBadge from "./TaskPriorityBadge"
 import { cn } from "@/lib/utils"
@@ -13,6 +13,39 @@ interface TaskCardGridProps {
   tasks: Task[]
   userId: string
 }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function DueDateLabel({ dueDate, completed }: { dueDate: string | null | undefined; completed: boolean }) {
+  if (!dueDate) return null
+  const date = new Date(dueDate)
+  const overdue = !completed && date < new Date()
+  return (
+    <span className={cn("text-xs", overdue ? "text-red-400" : "text-white/40")}>
+      Due: {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+    </span>
+  )
+}
+
+function TagPills({ tags }: { tags: string | null | undefined }) {
+  if (!tags) return null
+  const list = tags.split(",").map((t) => t.trim()).filter(Boolean)
+  if (list.length === 0) return null
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {list.map((tag) => (
+        <span
+          key={tag}
+          className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-white/50"
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+// ── TaskCard ──────────────────────────────────────────────────────────────────
 
 function TaskCard({
   task,
@@ -32,6 +65,11 @@ function TaskCard({
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
   const [editDescription, setEditDescription] = useState(task.description ?? "")
+  const [editPriority, setEditPriority] = useState<TaskPriority>(task.priority ?? "medium")
+  const [editTags, setEditTags] = useState(task.tags ?? "")
+  const [editDueDate, setEditDueDate] = useState(
+    task.due_date ? task.due_date.slice(0, 16) : "", // trim to "YYYY-MM-DDTHH:MM"
+  )
   const titleInputRef = useRef<HTMLInputElement>(null)
 
   // Focus the title input when edit mode opens
@@ -54,6 +92,9 @@ function TaskCard({
   function handleEditOpen() {
     setEditTitle(task.title)
     setEditDescription(task.description ?? "")
+    setEditPriority(task.priority ?? "medium")
+    setEditTags(task.tags ?? "")
+    setEditDueDate(task.due_date ? task.due_date.slice(0, 16) : "")
     setEditing(true)
   }
 
@@ -67,6 +108,9 @@ function TaskCard({
       const fd = new FormData()
       fd.set("title", editTitle.trim())
       fd.set("description", editDescription.trim())
+      fd.set("priority", editPriority)
+      fd.set("tags", editTags.trim())
+      fd.set("due_date", editDueDate)
       await updateTaskAction(userId, task.id, fd)
       setEditing(false)
     })
@@ -76,6 +120,11 @@ function TaskCard({
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEditSave() }
     if (e.key === "Escape") handleEditCancel()
   }
+
+  const sharedInputClass =
+    "w-full rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+  const smallInputClass =
+    "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
 
   const isBusy = isPendingToggle || isPendingDelete || isPendingUpdate
 
@@ -120,14 +169,42 @@ function TaskCard({
               onChange={(e) => setEditTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Task title"
-              className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={sharedInputClass}
             />
             <input
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Description (optional)"
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={smallInputClass}
+            />
+            {/* Priority + Tags row */}
+            <div className="flex gap-2">
+              <select
+                value={editPriority}
+                onChange={(e) => setEditPriority(e.target.value as TaskPriority)}
+                className="rounded-lg border border-white/20 bg-white/10 px-2 py-1.5 text-xs text-white/80 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-label="Priority"
+              >
+                <option value="low" className="text-gray-900">Low</option>
+                <option value="medium" className="text-gray-900">Medium</option>
+                <option value="high" className="text-gray-900">High</option>
+              </select>
+              <input
+                value={editTags}
+                onChange={(e) => setEditTags(e.target.value)}
+                placeholder="Tags: work, home"
+                className={cn(smallInputClass, "flex-1")}
+                aria-label="Tags"
+              />
+            </div>
+            {/* Due date */}
+            <input
+              type="datetime-local"
+              value={editDueDate}
+              onChange={(e) => setEditDueDate(e.target.value)}
+              className={smallInputClass}
+              aria-label="Due date"
             />
             <div className="flex items-center gap-2 pt-0.5">
               <button
@@ -160,8 +237,10 @@ function TaskCard({
             {task.description && (
               <p className="text-xs text-white/40 mt-0.5 truncate">{task.description}</p>
             )}
-            <div className="mt-2">
-              <TaskPriorityBadge priority="Normal" />
+            <TagPills tags={task.tags} />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <TaskPriorityBadge priority={task.priority} />
+              <DueDateLabel dueDate={task.due_date} completed={task.completed} />
             </div>
           </>
         )}
@@ -191,6 +270,8 @@ function TaskCard({
     </motion.div>
   )
 }
+
+// ── TaskCardGrid ──────────────────────────────────────────────────────────────
 
 export default function TaskCardGrid({ tasks, userId }: TaskCardGridProps) {
   const shouldReduceMotion = useReducedMotion()
