@@ -2,18 +2,26 @@
 // [Task]: T-2.3.9
 // AddTaskForm — Client Component. Controlled form to create a new task.
 // Validates title before submit. Clears form on success. Shows loading state.
+// Fields: title (required), description, priority, tags, due_date.
 
 import { useState, useTransition } from "react"
 import { Plus } from "lucide-react"
 import { createTaskAction } from "@/app/dashboard/actions"
+import type { TaskPriority } from "@/lib/api"
 
 interface AddTaskFormProps {
   userId: string
 }
 
+const inputClass =
+  "w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+
 export default function AddTaskForm({ userId }: AddTaskFormProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [priority, setPriority] = useState<TaskPriority>("medium")
+  const [tags, setTags] = useState("")
+  const [dueDate, setDueDate] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -29,6 +37,9 @@ export default function AddTaskForm({ userId }: AddTaskFormProps) {
       const fd = new FormData()
       fd.set("title", title.trim())
       fd.set("description", description)
+      fd.set("priority", priority)
+      fd.set("tags", tags.trim())
+      fd.set("due_date", dueDate)
 
       const result = await createTaskAction(userId, fd)
       if (result?.error) {
@@ -36,6 +47,9 @@ export default function AddTaskForm({ userId }: AddTaskFormProps) {
       } else {
         setTitle("")
         setDescription("")
+        setPriority("medium")
+        setTags("")
+        setDueDate("")
       }
     })
   }
@@ -54,6 +68,7 @@ export default function AddTaskForm({ userId }: AddTaskFormProps) {
       )}
 
       <div className="space-y-3">
+        {/* Title */}
         <input
           type="text"
           name="title"
@@ -62,16 +77,61 @@ export default function AddTaskForm({ userId }: AddTaskFormProps) {
           maxLength={200}
           required
           placeholder="Task title (required)"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={inputClass}
         />
+
+        {/* Description */}
         <input
           type="text"
           name="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optional)"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={inputClass}
         />
+
+        {/* Priority + Tags row */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Priority */}
+          <select
+            name="priority"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as TaskPriority)}
+            className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:w-40 bg-white"
+            aria-label="Priority"
+          >
+            <option value="low">Low priority</option>
+            <option value="medium">Medium priority</option>
+            <option value="high">High priority</option>
+          </select>
+
+          {/* Tags */}
+          <input
+            type="text"
+            name="tags"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="Tags: work, home, shopping"
+            className={`${inputClass} flex-1`}
+            aria-label="Tags (comma-separated)"
+          />
+        </div>
+
+        {/* Due date */}
+        <div>
+          <label className="block text-xs text-gray-500 mb-1" htmlFor="due_date">
+            Due date (optional)
+          </label>
+          <input
+            id="due_date"
+            type="datetime-local"
+            name="due_date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
         <button
           type="submit"
           disabled={isPending || !title.trim()}

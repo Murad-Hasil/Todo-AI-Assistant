@@ -1,61 +1,87 @@
 "use client"
-// [Task]: T-2.3.8
-// FilterBar — Client Component. Provides "All" / "Pending" / "Completed" tab filtering.
-// Filters the already-fetched tasks array client-side — no API round-trip on filter change.
+// [Task]: T006 — Feature 015: Task Search & Filter
+// FilterBar — renders search input + 3 filter dropdowns + Clear button.
+// Props-driven: parent owns FilterState; this component is purely presentational.
 
-import { useState } from "react"
-import { Task } from "@/lib/api"
-import TaskList from "@/components/TaskList"
-
-type FilterType = "all" | "pending" | "completed"
+import { type FilterState, DEFAULT_FILTER, isDefaultFilter } from "@/lib/filters"
 
 interface FilterBarProps {
-  tasks: Task[]
-  userId: string
+  filters: FilterState
+  onChange: (f: FilterState) => void
 }
 
-const FILTERS: { label: string; value: FilterType }[] = [
-  { label: "All", value: "all" },
-  { label: "Pending", value: "pending" },
-  { label: "Completed", value: "completed" },
-]
+export default function FilterBar({ filters, onChange }: FilterBarProps) {
+  const hasActiveFilter = !isDefaultFilter(filters)
 
-export default function FilterBar({ tasks, userId }: FilterBarProps) {
-  const [activeFilter, setActiveFilter] = useState<FilterType>("all")
-
-  const filteredTasks = tasks.filter((task) => {
-    if (activeFilter === "pending") return !task.completed
-    if (activeFilter === "completed") return task.completed
-    return true
-  })
+  function handleClear() {
+    onChange({ ...DEFAULT_FILTER })
+  }
 
   return (
-    <div>
-      <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1 w-fit">
-        {FILTERS.map(({ label, value }) => (
-          <button
-            key={value}
-            onClick={() => setActiveFilter(value)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors min-h-[36px] ${
-              activeFilter === value
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {label}
-            {value !== "all" && (
-              <span className="ml-1.5 text-xs text-gray-400">
-                (
-                {value === "pending"
-                  ? tasks.filter((t) => !t.completed).length
-                  : tasks.filter((t) => t.completed).length}
-                )
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-      <TaskList tasks={filteredTasks} userId={userId} />
+    <div className="flex flex-wrap gap-2 items-center">
+      {/* Search input — US1 */}
+      <input
+        type="search"
+        value={filters.search}
+        onChange={(e) => onChange({ ...filters, search: e.target.value })}
+        placeholder="Search tasks..."
+        aria-label="Search tasks"
+        className="flex-1 min-w-[180px] rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+
+      {/* Priority filter — US2 */}
+      <select
+        value={filters.priority}
+        onChange={(e) =>
+          onChange({ ...filters, priority: e.target.value as FilterState['priority'] })
+        }
+        aria-label="Filter by priority"
+        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 [&>option]:text-gray-900"
+      >
+        <option value="">All Priorities</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+
+      {/* Status filter — US3 */}
+      <select
+        value={filters.status}
+        onChange={(e) =>
+          onChange({ ...filters, status: e.target.value as FilterState['status'] })
+        }
+        aria-label="Filter by status"
+        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 [&>option]:text-gray-900"
+      >
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="completed">Completed</option>
+      </select>
+
+      {/* Sort — US4 */}
+      <select
+        value={filters.sort}
+        onChange={(e) =>
+          onChange({ ...filters, sort: e.target.value as FilterState['sort'] })
+        }
+        aria-label="Sort tasks"
+        className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/70 focus:outline-none focus:ring-2 focus:ring-indigo-500 [&>option]:text-gray-900"
+      >
+        <option value="created">Newest First</option>
+        <option value="due_date">Due Date</option>
+        <option value="priority">Priority</option>
+      </select>
+
+      {/* Clear button — only shown when any filter is active */}
+      {hasActiveFilter && (
+        <button
+          onClick={handleClear}
+          aria-label="Clear all filters"
+          className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-white/50 hover:text-white hover:border-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
+        >
+          Clear ×
+        </button>
+      )}
     </div>
   )
 }

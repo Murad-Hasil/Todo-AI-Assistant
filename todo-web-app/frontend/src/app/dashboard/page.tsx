@@ -1,10 +1,10 @@
-// [Task]: T-3.4.23
+// [Task]: T-3.4.23, T007 (015-task-search-filter)
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/get-session"
 import { fetchWithToken, type Task } from "@/lib/api"
 import { signServerToken } from "@/lib/server-token"
 import AddTaskForm from "@/components/AddTaskForm"
-import TaskCardGrid from "@/components/tasks/TaskCardGrid"
+import DashboardClient from "@/components/dashboard/DashboardClient"
 
 export default async function DashboardPage() {
   // getSession() is deduplicated via React cache — shares the result already
@@ -47,7 +47,7 @@ export default async function DashboardPage() {
           {fetchError}
         </div>
       ) : (
-        <TaskCardGrid tasks={tasks} userId={userId} />
+        <DashboardClient tasks={tasks} userId={userId} />
       )}
     </div>
   )

@@ -6,12 +6,17 @@
 
 // ─── TypeScript Types ────────────────────────────────────────────────────────
 
+export type TaskPriority = 'low' | 'medium' | 'high'
+
 export interface Task {
   id: string
   user_id: string
   title: string
   description: string | null
   completed: boolean
+  priority: TaskPriority
+  tags?: string | null
+  due_date?: string | null
   created_at: string
   updated_at: string
 }
@@ -19,11 +24,17 @@ export interface Task {
 export interface TaskCreateInput {
   title: string
   description?: string
+  priority?: TaskPriority
+  tags?: string
+  due_date?: string
 }
 
 export interface TaskUpdateInput {
   title: string
   description?: string | null
+  priority?: TaskPriority
+  tags?: string | null
+  due_date?: string | null
 }
 
 export interface TaskListResponse {

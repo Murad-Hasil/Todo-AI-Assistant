@@ -1,25 +1,25 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 2.1.0 → 2.2.0
-Bump type: MINOR — four new principles added (XII, XIII, XIV, XV); Phase 5 tech
-  stack (Kafka, Dapr, Notification Service) and directory layout expanded;
-  Phase 5 Core Features section added. No existing principle was removed or
-  fundamentally redefined; all Phase 2–4 gates stand.
-Modified principles: None (all I–XI retained verbatim)
+Version change: 2.2.0 → 2.3.0
+Bump type: MINOR — two new principles added (XVI, XVII); Dapr Jobs API added to
+  tech stack; Phase 5 Core Features extended with Scheduled Jobs entry; directory
+  layout updated with jobs callback route and dapr/jobs component path.
+  No existing principle was removed or fundamentally redefined; all Phase 2–5.2
+  gates (I–XV) stand verbatim.
+Modified principles: None (I–XV retained verbatim)
 Added sections:
-  - XII. Event-Driven Architecture (NEW — Phase 5 Kafka/Dapr coupling constraint)
-  - XIII. Dapr Sidecar Pattern (NEW — every pod must carry a Dapr sidecar)
-  - XIV. Infrastructure Abstraction (NEW — code talks Dapr APIs, not raw Kafka/PG)
-  - XV. Event Publishing Reliability (NEW — retry contract for event publishing)
-  - Phase 5 Core Features (NEW)
-  - Phase 5 directory additions:
-      todo-web-app/k8s/dapr/              (Dapr component manifests)
-      todo-web-app/services/notification/ (Notification microservice)
+  - XVI. Dapr Jobs Scheduling (NEW — high-precision scheduling via Dapr Jobs API;
+      callback security; Neon-backed persistence; UTC timezone contract)
+  - XVII. Intelligent Reminder Confirmation (NEW — agent MUST confirm scheduled
+      time to user; MCP tool schedule_job; language parity with Principle XI)
+  - Phase 5 Core Features: Feature 6 — Scheduled Jobs (NEW)
+  - Technical Stack: Dapr Jobs API entry + JOBS_CALLBACK_SECRET env var (NEW)
+  - Directory Layout: backend/app/routes/jobs.py + k8s/dapr/jobs.yaml (NEW)
 Removed sections: None
 Templates requiring updates:
   ✅ .specify/templates/plan-template.md — Constitution Check gates are generic;
-     new principles XII–XV are self-documenting; no template edits required.
+     new principles XVI–XVII are self-documenting; no template edits required.
   ✅ .specify/templates/spec-template.md — Generic; no changes required.
   ✅ .specify/templates/tasks-template.md — Generic; no changes required.
   ✅ .specify/templates/phr-template.prompt.md — No changes required.
@@ -197,6 +197,59 @@ retry contract. Event consumers MUST be idempotent: processing the same event
 twice MUST NOT produce duplicate side effects (e.g., duplicate tasks, duplicate
 audit log entries).
 
+### XVI. Dapr Jobs Scheduling (PHASE 5 — NON-NEGOTIABLE)
+
+The system MUST use the Dapr Jobs API (`v1.0-alpha1` or the current stable release)
+as the exclusive mechanism for scheduling future-triggered callbacks. No cron-based
+Python libraries, APScheduler, Celery beat, or in-process sleep loops MUST be used
+to implement scheduled reminders or task lifecycle automation. The canonical logic
+flow MUST be:
+
+```
+AI Agent → MCP Tool (schedule_job) → Backend POST /api/jobs/schedule
+  → Dapr Sidecar Jobs API → (wait) → Dapr triggers GET/POST /api/jobs/trigger
+  → Backend publishes to `reminders` Kafka topic (via Dapr Pub/Sub)
+  → Notification Service consumes and emits alert
+```
+
+**Callback Security**: The `/api/jobs/trigger` endpoint MUST verify that the
+incoming request originates from the local Dapr sidecar by checking that the
+request source IP is `127.0.0.1` (localhost). Requests from any other origin MUST
+be rejected with HTTP 403. No Bearer token or user-facing auth is required for
+this internal callback, but the IP-origin check is MANDATORY and MUST NOT be
+disabled in any environment.
+
+**Persistence**: All scheduled jobs MUST be backed by the Neon Direct State Store
+(the PostgreSQL endpoint used for DDL — not the pgBouncer pooler). This ensures
+jobs survive cluster restarts and Dapr control-plane upgrades. The Dapr Jobs
+component manifest MUST reference the same `statestore` component name defined in
+`k8s/dapr/statestore.yaml`.
+
+**Timezone Contract**: All scheduled times MUST be stored and transmitted
+internally in UTC (ISO 8601 format: `YYYY-MM-DDTHH:MM:SSZ`). Conversion to the
+user's local timezone MUST happen exclusively in the frontend UI layer — never in
+the backend or agent. The MCP tool `schedule_job` MUST accept a UTC datetime
+string and MUST NOT attempt timezone inference or conversion server-side.
+
+### XVII. Intelligent Reminder Confirmation
+
+The AI Agent MUST confirm every successfully scheduled job back to the user with
+a human-readable message that includes the scheduled UTC time rendered in the
+user's detected local timezone. The canonical confirmation format is:
+
+> "I've scheduled a reminder for you at **[Time in user's local timezone]**
+> ([UTC time] UTC)."
+
+The agent MUST call the MCP tool `schedule_job` (not `schedule_reminder`, which
+remains for immediate Kafka pub events) when the user requests a future-dated
+reminder. The `schedule_job` tool MUST return the confirmed job name and scheduled
+fire time from the Dapr Jobs API response, which the agent MUST surface verbatim
+in its confirmation. If the Dapr Jobs API returns an error, the agent MUST inform
+the user with a plain-language failure message and MUST NOT silently swallow the
+error or fall back to a non-scheduled alternative without explicit user consent.
+Language parity with Principle XI applies: Roman Urdu requests MUST receive
+confirmation responses in Roman Urdu.
+
 ## Technical Stack & Environment
 
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS
@@ -214,9 +267,12 @@ audit log entries).
   JWT Token Verification (backend enforcement — shared by Phase 2 and Phase 3)
 - **Messaging (Phase 5)**: Kafka via Redpanda Cloud or Strimzi Operator
   - Topics: `task-events` (audit/CRUD events), `reminders` (scheduled alerts)
-- **Distributed Runtime (Phase 5)**: Dapr (Pub/Sub, State Management, Bindings)
+- **Distributed Runtime (Phase 5)**: Dapr (Pub/Sub, State Management, Bindings,
+  Jobs API)
   - Dapr Python SDK: `dapr-client`
   - Dapr HTTP API: `http://localhost:3500/v1.0/...` (sidecar endpoint)
+  - **Dapr Jobs API**: `http://localhost:3500/v1.0-alpha1/jobs/<job-name>`
+    (schedule, get, delete jobs; triggers backend callback on fire time)
 - **Notification Service (Phase 5)**: New Python 3.13 FastAPI microservice
   - Location: `/todo-web-app/services/notification/`
   - Subscribes to `reminders` and `task-events` topics via Dapr
@@ -227,7 +283,9 @@ audit log entries).
 - **Secrets**: No hardcoded tokens or credentials; use `.env` files and
   document all variables in `README.md`. Required Phase 5 vars:
   `KAFKA_BOOTSTRAP_SERVERS` (if Redpanda Cloud), `DAPR_HTTP_PORT` (default 3500),
-  `DAPR_GRPC_PORT` (default 50001), `NOTIFICATION_SERVICE_APP_ID`.
+  `DAPR_GRPC_PORT` (default 50001), `NOTIFICATION_SERVICE_APP_ID`,
+  `JOBS_CALLBACK_SECRET` (internal shared secret for additional job callback
+  hardening — optional layer on top of the mandatory localhost IP check).
 
 ## Core Features & Directory Layout
 
@@ -266,6 +324,11 @@ audit log entries).
    frontend clients; WebSocket upgrade on the frontend may be used for delivery
 5. AI-Triggered Reminders — The AI Agent exposes a new MCP tool `schedule_reminder`
    that publishes to the `reminders` topic through the Dapr sidecar with retry logic
+6. Scheduled Jobs — The AI Agent exposes a new MCP tool `schedule_job` that
+   creates a Dapr Job via the Jobs API for a specified UTC fire time; when the job
+   fires, Dapr calls `POST /api/jobs/trigger` on the backend (localhost-only,
+   IP-verified), which then publishes to the `reminders` Kafka topic to trigger the
+   Notification Service; all job state is persisted in the Neon Direct State Store
 
 ### Directory Layout
 
@@ -296,6 +359,7 @@ audit log entries).
 │   │   ├── auth.py              # JWT dependency (shared by Phase 2 + Phase 3)
 │   │   ├── main.py              # FastAPI app entry point
 │   │   ├── routes/              # FastAPI route handlers (Phase 2 CRUD)
+│   │   │   └── jobs.py          # POST /api/jobs/schedule, POST /api/jobs/trigger
 │   │   ├── agent/               # AI agent orchestration (Phase 3, OpenAI Agents SDK)
 │   │   └── mcp/                 # MCP server + tool definitions (Phase 3 + Phase 5)
 │   ├── migrations/              # Alembic migration scripts
@@ -311,7 +375,8 @@ audit log entries).
     │   └── todoai/              # Helm chart (backend + frontend)
     └── dapr/                    # Phase 5 — Dapr component manifests
         ├── pubsub.yaml          # Kafka Pub/Sub component (Dapr)
-        ├── statestore.yaml      # State store component (if used)
+        ├── statestore.yaml      # State store component (Neon Direct — used by Jobs)
+        ├── jobs.yaml            # Dapr Jobs component manifest (Phase 5.5)
         └── subscriptions/       # Dapr Subscription resources per service
 ```
 
@@ -338,4 +403,4 @@ approved amendment to this constitution.
    substantive agent interaction (implementation, planning, debugging,
    spec authoring).
 
-**Version**: 2.2.0 | **Ratified**: 2026-03-03 | **Last Amended**: 2026-03-08
+**Version**: 2.3.0 | **Ratified**: 2026-03-03 | **Last Amended**: 2026-04-02

@@ -21,6 +21,9 @@ async function getToken(): Promise<string> {
 export async function createTaskAction(userId: string, formData: FormData) {
   const title = formData.get("title") as string
   const description = (formData.get("description") as string) || undefined
+  const priority = (formData.get("priority") as string) || undefined
+  const tags = (formData.get("tags") as string) || undefined
+  const due_date = (formData.get("due_date") as string) || undefined
 
   if (!title?.trim()) return { error: "Title is required." }
 
@@ -28,7 +31,13 @@ export async function createTaskAction(userId: string, formData: FormData) {
     const token = await getToken()
     const res = await fetchWithToken(`/api/${userId}/tasks`, token, {
       method: "POST",
-      body: JSON.stringify({ title: title.trim(), description }),
+      body: JSON.stringify({
+        title: title.trim(),
+        description,
+        priority,
+        tags,
+        due_date,
+      }),
     })
     await res.json()
     revalidatePath("/dashboard")
@@ -74,6 +83,9 @@ export async function updateTaskAction(
 ) {
   const title = formData.get("title") as string
   const description = formData.get("description") as string | null
+  const priority = (formData.get("priority") as string) || undefined
+  const tags = formData.get("tags") as string | null
+  const due_date = (formData.get("due_date") as string) || null
 
   if (!title?.trim()) return { error: "Title is required." }
 
@@ -81,7 +93,13 @@ export async function updateTaskAction(
     const token = await getToken()
     const res = await fetchWithToken(`/api/${userId}/tasks/${taskId}`, token, {
       method: "PUT",
-      body: JSON.stringify({ title: title.trim(), description: description ?? null }),
+      body: JSON.stringify({
+        title: title.trim(),
+        description: description ?? null,
+        priority,
+        tags: tags ?? null,
+        due_date,
+      }),
     })
     const data = await res.json()
     revalidatePath("/dashboard")
