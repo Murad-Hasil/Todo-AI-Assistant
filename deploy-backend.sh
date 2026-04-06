@@ -1,39 +1,39 @@
 #!/bin/bash
-# deploy-backend.sh — Backend changes ko HF Space + GitHub dono pe push karo
+# deploy-backend.sh — Push backend changes to HF Space + GitHub
 # Usage: ./deploy-backend.sh "commit message"
 
-set -e  # koi bhi error aye to script ruk jaye
+set -e  # exit immediately if any command fails
 
 COMMIT_MSG="${1:-chore: update backend}"
 BACKEND_DIR="$(dirname "$0")/todo-web-app/backend"
 ROOT_DIR="$(dirname "$0")"
 
-echo "==> Backend deploy shuru ho raha hai..."
+echo "==> Starting backend deploy..."
 echo "    Commit message: $COMMIT_MSG"
 echo ""
 
-# ── Step 1: HF Space pe push ──────────────────────────────────────────────
-echo "[1/2] HF Space pe push kar raha hai..."
+# ── Step 1: Push to HF Space ──────────────────────────────────────────────
+echo "[1/2] Pushing to HF Space..."
 cd "$BACKEND_DIR"
 
 if [[ -z $(git status --porcelain) ]]; then
-    echo "      Koi change nahi mila backend mein, HF push skip."
+    echo "      No changes detected in backend, skipping HF push."
 else
     git add .
     git commit -m "$COMMIT_MSG
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
     git push origin main
-    echo "      HF Space update ho gaya ✓"
+    echo "      HF Space updated ✓"
 fi
 
-# ── Step 2: GitHub (main project) pe push ─────────────────────────────────
-echo "[2/2] GitHub pe push kar raha hai..."
+# ── Step 2: Push to GitHub (main project) ─────────────────────────────────
+echo "[2/2] Pushing to GitHub..."
 cd "$ROOT_DIR"
 
 git add todo-web-app/backend
 if [[ -z $(git diff --cached --name-only) ]]; then
-    echo "      Submodule already up to date, GitHub push skip."
+    echo "      Submodule already up to date, skipping GitHub push."
 else
     git commit -m "chore: update backend submodule
 
@@ -41,10 +41,10 @@ $COMMIT_MSG
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
     git push origin main
-    echo "      GitHub update ho gaya ✓"
+    echo "      GitHub updated ✓"
 fi
 
 echo ""
-echo "==> Deploy complete! Dono jagah push ho gaya ✓"
+echo "==> Deploy complete! Pushed to both remotes ✓"
 echo "    HF Space : https://huggingface.co/spaces/Mb-Murad/todo-ai-assistant"
 echo "    GitHub   : https://github.com/Murad-Hasil/Todo-AI-Assistant"
