@@ -4,6 +4,7 @@ import { useState, useTransition, useRef, useEffect } from "react"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Trash2, Check, Pencil, X, Save } from "lucide-react"
 import type { Task, TaskPriority } from "@/lib/api"
+import { type FilterState, isDefaultFilter } from "@/lib/filters"
 import { fadeInUp, staggerContainer, springTransition, reducedVariants } from "@/lib/animations"
 import TaskPriorityBadge from "./TaskPriorityBadge"
 import { cn } from "@/lib/utils"
@@ -12,6 +13,7 @@ import { toggleTaskAction, deleteTaskAction, updateTaskAction } from "@/app/dash
 interface TaskCardGridProps {
   tasks: Task[]
   userId: string
+  filters?: FilterState
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -273,15 +275,23 @@ function TaskCard({
 
 // ── TaskCardGrid ──────────────────────────────────────────────────────────────
 
-export default function TaskCardGrid({ tasks, userId }: TaskCardGridProps) {
+export default function TaskCardGrid({ tasks, userId, filters }: TaskCardGridProps) {
   const shouldReduceMotion = useReducedMotion()
   const containerVariants = shouldReduceMotion ? {} : staggerContainer
   const cardVariants = shouldReduceMotion ? reducedVariants(fadeInUp) : fadeInUp
 
   if (tasks.length === 0) {
+    const filtersActive = filters && !isDefaultFilter(filters)
     return (
       <div className="text-center py-16">
-        <p className="text-white/40 text-sm">No tasks yet — add your first one above.</p>
+        {filtersActive ? (
+          <>
+            <p className="text-white/40 text-sm">No tasks match your filters.</p>
+            <p className="text-white/25 text-xs mt-1">Try adjusting or clearing your filters.</p>
+          </>
+        ) : (
+          <p className="text-white/40 text-sm">No tasks yet — add your first one above.</p>
+        )}
       </div>
     )
   }
