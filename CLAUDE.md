@@ -235,6 +235,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Neon PostgreSQL (pooler for app CRUD; direct endpoint for Dapr statestore DDL) (009-audit-statestore)
 - Python 3.13 (notification service) + Python 3.13 (backend extension) + FastAPI 0.115+, uvicorn[standard] 0.30+ (notification service); httpx 0.27+ (backend events.py — already present) (010-notification-service)
 - None — notification service is stateless. No DB table changes. (010-notification-service)
+- Python 3.13 + FastAPI 0.115+, httpx 0.27+ (existing), dateparser 1.2+ (013-dapr-jobs-scheduling)
+- Neon PostgreSQL (app tables — read-only task lookup); Dapr State Store (013-dapr-jobs-scheduling)
 
 ## Recent Changes
 - 001-phase1-todo-cli: Added Python 3.13 + Standard library only — `dataclasses`, `sys`, `textwrap`

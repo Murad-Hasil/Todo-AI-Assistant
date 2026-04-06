@@ -1,0 +1,198 @@
+openapi: "3.1.0"
+info:
+  title: Jobs API — Phase 5.5 Intelligent Scheduling
+  version: "1.0.0"
+  description: >
+    Two new endpoints on the FastAPI backend for scheduling Dapr Jobs
+    (POST /api/jobs/schedule) and receiving Dapr job callbacks
+    (POST /api/jobs/trigger and POST /job/{job_name}).
+
+paths:
+  /api/jobs/schedule:
+    post:
+      summary: Schedule a reminder job via Dapr Jobs API
+      description: >
+        Called by the MCP tool `schedule_reminder`. Parses the natural language
+        time, creates a unique job name, and registers a Dapr Job that will fire
+        at the specified UTC time. Requires a valid Bearer JWT token.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleReminderRequest"
+            example:
+              user_id: "user123"
+              task_id: 42
+              reminder_time_natural_language: "in 10 minutes"
+      responses:
+        "201":
+          description: Job scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleReminderResponse"
+              example:
+                job_name: "reminder-user123-42-1743600600"
+                due_time_utc: "2026-04-02T14:40:00Z"
+                task_title: "Submit the report"
+        "400":
+          description: >
+            Unresolvable time expression, time is in the past, or task_id not
+            found / does not belong to user_id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorDetail"
+              examples:
+                past_time:
+                  value:
+                    detail: "Scheduled time is in the past. Please specify a future time."
+                bad_expression:
+                  value:
+                    detail: "Could not parse time expression: 'yesterday'. Please use a clearer time."
+                task_not_found:
+                  value:
+                    detail: "Task 42 not found or does not belong to this user."
+        "401":
+          description: Missing or invalid Bearer JWT token.
+        "503":
+          description: Dapr Jobs API unavailable after retries.
+
+  /api/jobs/trigger:
+    post:
+      summary: Job callback alias (spec compliance endpoint)
+      description: >
+        Alias for POST /job/{job_name}. Both routes invoke the same handler.
+        Restricted to requests originating from 127.0.0.1 (Dapr sidecar).
+        External callers receive HTTP 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DaprJobCallbackBody"
+      responses:
+        "200":
+          description: Reminder event published to Kafka successfully (or task not found — ACK without publish).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+        "403":
+          description: Request did not originate from localhost (Dapr sidecar).
+        "503":
+          description: Kafka publish failed after exhausting retries.
+
+  /job/{job_name}:
+    post:
+      summary: Dapr job callback (primary path called by Dapr runtime)
+      description: >
+        Dapr invokes this endpoint when a scheduled job fires. The job_name
+        follows the pattern reminder-{user_id}-{task_id}-{unix_ts}.
+        Restricted to 127.0.0.1 (Dapr sidecar). Looks up task title from DB,
+        then calls publish_reminder_event() to emit to the reminders Kafka topic.
+      parameters:
+        - name: job_name
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "reminder-user123-42-1743600600"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DaprJobCallbackBody"
+      responses:
+        "200":
+          description: Callback handled (reminder published or task not found — always ACK).
+        "403":
+          description: Request did not originate from localhost.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ScheduleReminderRequest:
+      type: object
+      required:
+        - user_id
+        - task_id
+        - reminder_time_natural_language
+      properties:
+        user_id:
+          type: string
+          description: JWT-authenticated user identifier
+        task_id:
+          type: integer
+          description: ID of the task to be reminded about
+        reminder_time_natural_language:
+          type: string
+          description: >
+            Natural language time expression (e.g. "in 10 minutes",
+            "tomorrow at 9am", "next Monday at 2pm")
+
+    ScheduleReminderResponse:
+      type: object
+      required:
+        - job_name
+        - due_time_utc
+        - task_title
+      properties:
+        job_name:
+          type: string
+          description: Unique Dapr job name
+          example: "reminder-user123-42-1743600600"
+        due_time_utc:
+          type: string
+          format: date-time
+          description: ISO 8601 UTC fire time
+          example: "2026-04-02T14:40:00Z"
+        task_title:
+          type: string
+          description: Resolved task title for agent confirmation message
+
+    DaprJobCallbackBody:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Full job name
+          example: "reminder-user123-42-1743600600"
+        data:
+          $ref: "#/components/schemas/JobData"
+
+    JobData:
+      type: object
+      required:
+        - task_id
+        - user_id
+        - type
+      properties:
+        task_id:
+          type: integer
+        user_id:
+          type: string
+        type:
+          type: string
+          enum: ["reminder"]
+
+    ErrorDetail:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string

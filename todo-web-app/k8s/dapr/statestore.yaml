@@ -24,5 +24,9 @@ spec:
       value: "1h"
     - name: disableEntityManagement
       value: "true"
+    - name: connectionTimeout
+      value: "30s"
+    - name: keyPrefix
+      value: "name"
 auth:
   secretStore: kubernetes
