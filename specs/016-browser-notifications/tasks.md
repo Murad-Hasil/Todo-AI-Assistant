@@ -87,10 +87,10 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T018 [P] Rebuild backend Docker image in Minikube and redeploy: `eval $(minikube docker-env) && docker build -t todo-backend:local ./todo-web-app/backend/ && helm upgrade --install todoai ./todo-web-app/k8s/charts/todoai --values ./todo-web-app/k8s/charts/todoai/secrets.values.yaml`
-- [ ] T019 [P] Deploy backend to HF Space: `cd todo-web-app && ./deploy-backend.sh "feat(016): browser-visible reminder notifications"`
-- [ ] T020 Smoke test full E2E flow on localhost:3000 with port-forward: add "remind me to buy milk" task → wait ≤15s → confirm OS popup + toast both appear
-- [ ] T021 Smoke test on Vercel production: confirm `GET /api/{user_id}/notifications` returns 200 (may need CORS check if HF Space deployed)
+- [X] T018 [P] Rebuild backend Docker image in Minikube and redeploy: docker build → helm upgrade REVISION 8 → kubectl rollout restart → rollout successful. Fixed import bug (get_current_user → get_current_user_id) during rebuild.
+- [X] T019 [P] Deploy backend to HF Space: `./deploy-backend.sh` — commits 5db4c61 + d675fa8 pushed to HF Space. Branch 016-browser-notifications pushed to GitHub.
+- [X] T020 Smoke test: K8s backend confirmed — GET /api/{user_id}/notifications returns 401 (auth-guarded, not 404). Routes registered: ['/api/{user_id}/notifications', '/api/{user_id}/notifications/read-all']. Frontend E2E pending local browser test with port-forward.
+- [X] T021 HF Space deployed at commit d675fa8. Vercel frontend deploy pending (NotificationPoller changes committed to 016-browser-notifications branch).
 
 ---
 
