@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -14,6 +14,10 @@ const geistMono = localFont({
 });
 
 const siteUrl = "https://murad-hasil-todo-ai.vercel.app";
+
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
+};
 
 // [Task]: T-3.4.4 — Enterprise SEO & Metadata
 export const metadata: Metadata = {
@@ -43,7 +47,6 @@ export const metadata: Metadata = {
     description:
       "Explore a fully containerized, Kafka-powered AI Todo system built with Spec-Driven Development.",
   },
-  themeColor: "#0f172a",
   icons: {
     icon: "/favicon.ico",
   },
