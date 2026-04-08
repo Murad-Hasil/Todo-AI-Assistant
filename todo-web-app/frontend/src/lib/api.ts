@@ -279,6 +279,16 @@ export async function toggleTask(
   return res.json()
 }
 
+// ─── Notification Types (016-browser-notifications) ──────────────────────────
+// [Task]: T011
+
+export interface Notification {
+  id: string
+  task_title: string
+  message: string
+  created_at: string
+}
+
 // ─── Chat API Functions (Phase 3.3) ──────────────────────────────────────────
 // [Task]: T-3.3.5
 
@@ -306,5 +316,22 @@ export async function getChatHistory(
   const res = await fetchWithAuth(
     `/api/${userId}/conversations/${conversationId}/messages`,
   )
+  return res.json()
+}
+
+// ─── Notification API Functions (016-browser-notifications) ──────────────────
+// [Task]: T011
+
+export async function getNotifications(userId: string): Promise<Notification[]> {
+  const res = await fetchWithAuth(`/api/${userId}/notifications`)
+  return res.json()
+}
+
+export async function markNotificationsRead(
+  userId: string,
+): Promise<{ marked_read: number }> {
+  const res = await fetchWithAuth(`/api/${userId}/notifications/read-all`, {
+    method: "POST",
+  })
   return res.json()
 }

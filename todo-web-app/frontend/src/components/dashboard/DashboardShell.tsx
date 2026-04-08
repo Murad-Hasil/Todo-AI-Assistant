@@ -4,6 +4,7 @@ import { useState, Suspense } from "react"
 import { Menu } from "lucide-react"
 import Sidebar from "./Sidebar"
 import ChatDrawer from "@/components/chat/ChatDrawer"
+import NotificationPoller from "@/components/NotificationPoller" // [Task]: T013 (016-browser-notifications)
 
 interface DashboardShellProps {
   userId: string
@@ -47,6 +48,9 @@ export default function DashboardShell({ userId, children }: DashboardShellProps
           userId={userId}
         />
       </Suspense>
+
+      {/* [Task]: T013 (016-browser-notifications) — polls for reminders every 10 s */}
+      <NotificationPoller userId={userId} />
     </div>
   )
 }
