@@ -126,7 +126,7 @@
 - [x] T017 [P] Run `npx tsc --noEmit` in `todo-web-app/frontend/` — fix any TypeScript errors (strict mode, 0 errors required)
 - [x] T018 [P] Verify Clear button in `FilterBar.tsx` resets all filters to `DEFAULT_FILTER` and is hidden when no filters active
 - [x] T019 [P] Verify `FilterBar` is responsive — wraps cleanly on mobile viewport (`flex-wrap`)
-- [ ] T020 Run E2E smoke test: create 3 tasks with different priorities/titles → search + filter + sort all work in combination
+- [x] T020 Run E2E smoke test: create 3 tasks with different priorities/titles → search + filter + sort all work in combination
 
 ---
 

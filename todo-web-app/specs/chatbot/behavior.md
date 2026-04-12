@@ -192,13 +192,13 @@ error codes to the user.
 
 ## Acceptance Criteria
 
-- [ ] Agent responds in Roman Urdu when user writes in Roman Urdu.
-- [ ] Agent switches language per message — no language lock-in.
-- [ ] `add_task` is triggered by "add", "create", "kaam banana" and equivalent.
-- [ ] `list_tasks` respects status filter derived from user phrasing.
-- [ ] `complete_task` requests clarification when task identity is ambiguous.
-- [ ] `delete_task` ALWAYS shows a confirmation prompt before calling the tool.
-- [ ] `update_task` correctly identifies which fields to update from user message.
-- [ ] No raw tool errors, JSON payloads, or internal error codes appear in agent response.
-- [ ] Multi-intent messages (add + list) are handled sequentially in one turn.
-- [ ] Agent uses conversation history for context ("the task I just added").
+- [x] Agent responds in Roman Urdu when user writes in Roman Urdu.
+- [x] Agent switches language per message — no language lock-in.
+- [x] `add_task` is triggered by "add", "create", "kaam banana" and equivalent.
+- [x] `list_tasks` respects status filter derived from user phrasing.
+- [x] `complete_task` requests clarification when task identity is ambiguous.
+- [x] `delete_task` ALWAYS shows a confirmation prompt before calling the tool.
+- [x] `update_task` correctly identifies which fields to update from user message.
+- [x] No raw tool errors, JSON payloads, or internal error codes appear in agent response.
+- [x] Multi-intent messages (add + list) are handled sequentially in one turn.
+- [x] Agent uses conversation history for context ("the task I just added").

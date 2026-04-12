@@ -239,6 +239,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Neon PostgreSQL (app tables — read-only task lookup); Dapr State Store (013-dapr-jobs-scheduling)
 - TypeScript 5.x (strict mode), Next.js 14+ (App Router) + React `useState`, Tailwind CSS — no new packages (015-task-search-filter)
 - N/A (client-side state only; tasks fetched once on page load) (015-task-search-filter)
+- Python 3.13 (backend) + TypeScript 5.x strict (frontend) + FastAPI 0.115+, SQLModel 0.0.21+, Alembic, Next.js 16.1.6 (App Router), Tailwind CSS — no new packages required (016-browser-notifications)
+- Neon Serverless PostgreSQL — new `user_notifications` table via Alembic migration 003 (016-browser-notifications)
 
 ## Recent Changes
 - 001-phase1-todo-cli: Added Python 3.13 + Standard library only — `dataclasses`, `sys`, `textwrap`
