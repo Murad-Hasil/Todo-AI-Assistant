@@ -24,8 +24,8 @@ export default function FilterBar({ filters, onChange }: FilterBarProps) {
         type="search"
         value={filters.search}
         onChange={(e) => onChange({ ...filters, search: e.target.value })}
-        placeholder="Search tasks..."
-        aria-label="Search tasks"
+        placeholder="Search by title, description, or tags..."
+        aria-label="Search by title, description, or tags"
         className="flex-1 min-w-[180px] rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
 

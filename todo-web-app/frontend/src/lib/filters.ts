@@ -31,13 +31,14 @@ export function isDefaultFilter(filters: FilterState): boolean {
 export function applyFilters(tasks: Task[], filters: FilterState): Task[] {
   let result = tasks
 
-  // 1. Keyword search — case-insensitive substring match on title + description
+  // 1. Keyword search — case-insensitive substring match on title + description + tags
   if (filters.search.trim()) {
     const q = filters.search.toLowerCase()
     result = result.filter(
       (t) =>
         t.title.toLowerCase().includes(q) ||
-        (t.description ?? '').toLowerCase().includes(q),
+        (t.description ?? '').toLowerCase().includes(q) ||
+        (t.tags ?? '').toLowerCase().includes(q),
     )
   }
 
